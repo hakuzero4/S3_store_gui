@@ -371,19 +371,7 @@ func (c *Client) GetObject(ctx context.Context, bucket, key string) (io.ReadClos
 }
 
 func (c *Client) CopyObject(ctx context.Context, bucket, srcKey, dstKey string) error {
-	// URL-encode source path for CopySource
-	src := url.PathEscape(bucket) + "/" + escapeKeyForCopy(srcKey)
-	// PathEscape encodes / so we need a key-aware escape
-	src = bucket + "/" + escapeKeyForCopy(srcKey)
-	_, err := c.svc.CopyObject(ctx, &s3.CopyObjectInput{
-		Bucket:     aws.String(bucket),
-		Key:        aws.String(dstKey),
-		CopySource: aws.String(src),
-	}, func(o *s3.Options) {
-		o.RequestChecksumCalculation = aws.RequestChecksumCalculationWhenRequired
-		o.ResponseChecksumValidation = aws.ResponseChecksumValidationWhenRequired
-	})
-	return err
+	return c.CopyObjectTo(ctx, bucket, srcKey, bucket, dstKey)
 }
 
 func (c *Client) PresignGet(ctx context.Context, bucket, key string, expire time.Duration) (string, error) {

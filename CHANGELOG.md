@@ -8,12 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Sidebar **connection source** dropdown for quick switching between R2/S3 profiles
-- i18n strings for connection switching (`switchConnection`, `manageConnections`, etc.)
+- Sidebar connection source dropdown
+- Copy/Move across prefixes and buckets
+- ZIP download for selection
+- Text/code preview
+- Upload retry
+- Profile import/export
+- Multipart upload for larger files
 
 ### Changed
-- Sidebar layout: connection + language controls moved into a compact footer (no floating card)
-- Removed redundant provider label under the connection selector
+- Compact sidebar footer for connection + language
 
 ## [0.1.0] - 2026-07-31
 

@@ -79,7 +79,27 @@
     "presignTitle": "预签名链接",
     "openInNewTab": "新窗口打开",
     "imageLoadFailed": "图片加载失败",
-    "searchPlaceholder": "搜索"
+    "searchPlaceholder": "搜索",
+    "copy": "复制",
+    "move": "移动",
+    "zipDownload": "下载 ZIP",
+    "copyTitle": "复制对象",
+    "moveTitle": "移动对象",
+    "dstBucket": "目标 Bucket",
+    "dstPrefix": "目标前缀",
+    "dstPrefixPh": "folder/path/",
+    "runCopy": "复制",
+    "runMove": "移动",
+    "copyOk": "已复制 {n} 个对象",
+    "moveOk": "已移动 {n} 个对象",
+    "zipOk": "已开始 ZIP 下载",
+    "zipEmpty": "请先选择文件或文件夹",
+    "textPreview": "文本预览",
+    "binaryFile": "二进制文件，无法预览",
+    "truncated": "仅显示前 {n} 字节（已截断）",
+    "uploadFailed": "上传失败：{name}",
+    "uploadRetry": "重试上传（{n}）…",
+    "selectFirst": "请先选择项目"
   },
   "profiles": {
     "title": "连接",
@@ -132,7 +152,12 @@
     "providerR2": "Cloudflare R2",
     "providerAws": "AWS S3",
     "providerMinio": "MinIO",
-    "providerOther": "其他 S3 兼容"
+    "providerOther": "其他 S3 兼容",
+    "export": "导出",
+    "import": "导入",
+    "exportOk": "已导出配置",
+    "importOk": "已导入 {n} 条配置",
+    "importFail": "导入失败"
   },
   "msg": {
     "requestFailed": "请求失败"

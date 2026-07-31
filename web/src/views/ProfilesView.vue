@@ -6,8 +6,14 @@ import {
   NSpace, NSwitch, NTag, NPopconfirm, useMessage,
 } from 'naive-ui'
 import {
-  AddOutline, CheckmarkCircleOutline, CloudOutline, FlashOutline,
-  SaveOutline, TrashOutline,
+  AddOutline,
+  CheckmarkCircleOutline,
+  CloudOutline,
+  CloudUploadOutline,
+  DownloadOutline,
+  FlashOutline,
+  SaveOutline,
+  TrashOutline,
 } from '@vicons/ionicons5'
 import { api, providerKey } from '../api'
 import { useAppStore } from '../stores/app'
@@ -40,6 +46,44 @@ const endpointPlaceholder = computed(() => {
     default: return t('profiles.phEndpointOther')
   }
 })
+
+
+const importInput = ref<HTMLInputElement | null>(null)
+
+async function exportProfiles() {
+  try {
+    const blob = await api.exportProfiles()
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 's3store-profiles.json'
+    a.click()
+    URL.revokeObjectURL(url)
+    message.success(t('profiles.exportOk'))
+  } catch (e: any) {
+    message.error(e.message)
+  }
+}
+
+function triggerImport() {
+  importInput.value?.click()
+}
+
+async function onImportFile(ev: Event) {
+  const input = ev.target as HTMLInputElement
+  const file = input.files?.[0]
+  input.value = ''
+  if (!file) return
+  try {
+    const text = await file.text()
+    const data = JSON.parse(text)
+    const res = await api.importProfiles(data)
+    message.success(t('profiles.importOk', { n: res.imported }))
+    await store.loadProfiles()
+  } catch (e: any) {
+    message.error(e?.message || t('profiles.importFail'))
+  }
+}
 
 function resetForm(preset: 'r2' | 'aws' | 'minio' | 'other' = 'r2') {
   editingId.value = null
@@ -184,6 +228,15 @@ resetForm('r2')
         <p class="subhead hero-sub">{{ t('profiles.subtitle') }}</p>
       </div>
       <div class="hero-actions">
+        <input ref="importInput" type="file" accept="application/json,.json" style="display:none" @change="onImportFile" />
+        <NButton secondary class="pressable" @click="exportProfiles">
+          <template #icon><NIcon :component="DownloadOutline" /></template>
+          {{ t('profiles.export') }}
+        </NButton>
+        <NButton secondary class="pressable" @click="triggerImport">
+          <template #icon><NIcon :component="CloudUploadOutline" /></template>
+          {{ t('profiles.import') }}
+        </NButton>
         <NButton type="primary" class="pressable" @click="resetForm('r2')">
           <template #icon><NIcon :component="AddOutline" /></template>
           {{ t('profiles.newR2') }}

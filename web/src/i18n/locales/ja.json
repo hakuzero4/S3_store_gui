@@ -79,7 +79,27 @@
     "presignTitle": "署名付き URL",
     "openInNewTab": "新しいタブで開く",
     "imageLoadFailed": "画像の読み込みに失敗しました",
-    "searchPlaceholder": "検索"
+    "searchPlaceholder": "検索",
+    "copy": "コピー",
+    "move": "移動",
+    "zipDownload": "ZIP ダウンロード",
+    "copyTitle": "オブジェクトをコピー",
+    "moveTitle": "オブジェクトを移動",
+    "dstBucket": "宛先バケット",
+    "dstPrefix": "宛先プレフィックス",
+    "dstPrefixPh": "folder/path/",
+    "runCopy": "コピー",
+    "runMove": "移動",
+    "copyOk": "{n} 件コピーしました",
+    "moveOk": "{n} 件移動しました",
+    "zipOk": "ZIP ダウンロードを開始",
+    "zipEmpty": "ZIP する項目を選択",
+    "textPreview": "テキストプレビュー",
+    "binaryFile": "バイナリファイルはプレビュー不可",
+    "truncated": "先頭 {n} バイトのみ（切り捨て）",
+    "uploadFailed": "アップロード失敗: {name}",
+    "uploadRetry": "リトライ中 ({n})…",
+    "selectFirst": "先に項目を選択"
   },
   "profiles": {
     "title": "接続",
@@ -132,7 +152,12 @@
     "providerR2": "Cloudflare R2",
     "providerAws": "AWS S3",
     "providerMinio": "MinIO",
-    "providerOther": "その他 S3 互換"
+    "providerOther": "その他 S3 互換",
+    "export": "エクスポート",
+    "import": "インポート",
+    "exportOk": "プロファイルを出力しました",
+    "importOk": "{n} 件インポートしました",
+    "importFail": "インポート失敗"
   },
   "msg": {
     "requestFailed": "リクエストに失敗しました"

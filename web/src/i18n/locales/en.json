@@ -79,7 +79,27 @@
     "presignTitle": "Presigned URL",
     "openInNewTab": "Open in new tab",
     "imageLoadFailed": "Failed to load image",
-    "searchPlaceholder": "Search"
+    "searchPlaceholder": "Search",
+    "copy": "Copy",
+    "move": "Move",
+    "zipDownload": "Download ZIP",
+    "copyTitle": "Copy objects",
+    "moveTitle": "Move objects",
+    "dstBucket": "Destination bucket",
+    "dstPrefix": "Destination prefix",
+    "dstPrefixPh": "folder/path/",
+    "runCopy": "Copy",
+    "runMove": "Move",
+    "copyOk": "Copied {n} object(s)",
+    "moveOk": "Moved {n} object(s)",
+    "zipOk": "ZIP download started",
+    "zipEmpty": "Select files or folders to zip",
+    "textPreview": "Text preview",
+    "binaryFile": "Binary file ? preview not available",
+    "truncated": "Showing first {n} bytes (truncated)",
+    "uploadFailed": "Upload failed: {name}",
+    "uploadRetry": "Retrying upload ({n})?",
+    "selectFirst": "Select items first"
   },
   "profiles": {
     "title": "Connections",
@@ -132,7 +152,12 @@
     "providerR2": "Cloudflare R2",
     "providerAws": "AWS S3",
     "providerMinio": "MinIO",
-    "providerOther": "Other S3-compatible"
+    "providerOther": "Other S3-compatible",
+    "export": "Export",
+    "import": "Import",
+    "exportOk": "Profiles exported",
+    "importOk": "Imported {n} profile(s)",
+    "importFail": "Import failed"
   },
   "msg": {
     "requestFailed": "Request failed"

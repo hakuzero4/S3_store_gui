@@ -11,7 +11,7 @@ import {
   FolderOutline, HomeOutline, LinkOutline, RefreshOutline, SearchOutline, TrashOutline,
   DocumentOutline, AddOutline, ChevronForwardOutline, ImageOutline, EyeOutline,
 } from '@vicons/ionicons5'
-import { api, formatBytes, formatTime, isImageName } from '../api'
+import { api, formatBytes, formatTime, isImageName, isTextName } from '../api'
 import { useAppStore } from '../stores/app'
 import type { ObjectItem } from '../types'
 
@@ -36,6 +36,20 @@ const detailLoading = ref(false)
 const detail = ref<Record<string, any> | null>(null)
 const showPresign = ref(false)
 const presignUrl = ref('')
+
+const showTransfer = ref(false)
+const transferMode = ref<'copy' | 'move'>('copy')
+const transferBusy = ref(false)
+const dstBucket = ref('')
+const dstPrefix = ref('')
+
+const showText = ref(false)
+const textLoading = ref(false)
+const textTitle = ref('')
+const textBody = ref('')
+const textMeta = ref('')
+const textBinary = ref(false)
+
 
 const showPreview = ref(false)
 const previewLoading = ref(false)
@@ -111,6 +125,7 @@ const columns = computed<DataTableColumns<ObjectItem & { _rowKey: string }>>(() 
                 e.stopPropagation()
                 if (row.isDir) onOpen(row)
                 else if (isImageName(row.name)) openPreview(row)
+                else if (isTextName(row.name)) openTextPreview(row)
               },
             },
             row.name,
@@ -147,6 +162,8 @@ const columns = computed<DataTableColumns<ObjectItem & { _rowKey: string }>>(() 
       const acts: any[] = []
       if (isImageName(row.name)) {
         acts.push(tip(EyeOutline, t('common.preview'), () => openPreview(row)))
+      } else if (isTextName(row.name)) {
+        acts.push(tip(EyeOutline, t('browser.textPreview'), () => openTextPreview(row)))
       }
       acts.push(
         tip(DownloadOutline, t('common.download'), () => downloadOne(row)),
@@ -172,6 +189,7 @@ const columns = computed<DataTableColumns<ObjectItem & { _rowKey: string }>>(() 
 function onOpen(row: ObjectItem) {
   if (row.isDir) store.enterDir(row.key).catch((e) => message.error(e.message))
   else if (isImageName(row.name)) openPreview(row)
+  else if (isTextName(row.name)) openTextPreview(row)
 }
 
 function openPreview(row: ObjectItem) {
@@ -242,6 +260,99 @@ async function deleteBucket() {
     },
   })
 }
+
+function selectionParts() {
+  const items = selectedItems()
+  const keys = items.filter((i) => !i.isDir).map((i) => i.key)
+  const prefixes = items.filter((i) => i.isDir).map((i) => i.key)
+  return { items, keys, prefixes }
+}
+
+function openTransfer(mode: 'copy' | 'move') {
+  const { items } = selectionParts()
+  if (!items.length) return message.warning(t('browser.selectFirst'))
+  transferMode.value = mode
+  dstBucket.value = store.currentBucket
+  dstPrefix.value = store.prefix
+  showTransfer.value = true
+}
+
+async function runTransfer() {
+  if (!store.currentBucket) return
+  const { keys, prefixes } = selectionParts()
+  if (!keys.length && !prefixes.length) return message.warning(t('browser.selectFirst'))
+  transferBusy.value = true
+  try {
+    const body = {
+      srcBucket: store.currentBucket,
+      dstBucket: dstBucket.value || store.currentBucket,
+      srcPrefix: store.prefix,
+      dstPrefix: dstPrefix.value,
+      keys,
+      prefixes,
+    }
+    const res = transferMode.value === 'move' ? await api.batchMove(body) : await api.batchCopy(body)
+    message.success(
+      transferMode.value === 'move'
+        ? t('browser.moveOk', { n: res.count })
+        : t('browser.copyOk', { n: res.count }),
+    )
+    showTransfer.value = false
+    await store.loadObjects()
+  } catch (e: any) {
+    message.error(e.message)
+  } finally {
+    transferBusy.value = false
+  }
+}
+
+async function zipSelected() {
+  if (!store.currentBucket) return
+  const { keys, prefixes } = selectionParts()
+  if (!keys.length && !prefixes.length) return message.warning(t('browser.zipEmpty'))
+  try {
+    const blob = await api.zipDownload({
+      bucket: store.currentBucket,
+      keys,
+      prefixes,
+      name: (store.currentBucket || 'download') + '.zip',
+    })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = (store.currentBucket || 'download') + '.zip'
+    a.click()
+    URL.revokeObjectURL(url)
+    message.success(t('browser.zipOk'))
+  } catch (e: any) {
+    message.error(e.message)
+  }
+}
+
+async function openTextPreview(row: ObjectItem) {
+  if (!store.currentBucket) return
+  showText.value = true
+  textLoading.value = true
+  textTitle.value = row.name
+  textBody.value = ''
+  textMeta.value = ''
+  textBinary.value = false
+  try {
+    const res = await api.objectContent(store.currentBucket, row.key)
+    textBinary.value = !!res.binary
+    textBody.value = res.text || ''
+    const bits: string[] = [formatBytes(res.size)]
+    if (res.contentType) bits.push(res.contentType)
+    if (res.truncated) bits.push(t('browser.truncated', { n: res.maxBytes }))
+    textMeta.value = bits.join(' ? ')
+  } catch (e: any) {
+    message.error(e.message)
+    showText.value = false
+  } finally {
+    textLoading.value = false
+  }
+}
+
 function selectedItems() {
   const set = new Set(store.selectedKeys)
   return rows.value.filter((r) => set.has(r._rowKey))
@@ -311,7 +422,12 @@ async function uploadFiles(fileList: UploadFileInfo[]) {
   try {
     for (const file of files) {
       uploadName.value = file.name; uploadPct.value = 0
-      await api.upload(store.currentBucket, store.prefix + file.name, file, (p) => (uploadPct.value = p))
+      try {
+        await api.uploadWithRetry(store.currentBucket, store.prefix + file.name, file, (p) => (uploadPct.value = p), 2)
+      } catch (e: any) {
+        message.error(t('browser.uploadFailed', { name: file.name }) + ' ' + (e?.message || ''))
+        throw e
+      }
     }
     message.success('已上传 ' + files.length); await store.loadObjects()
   } catch (e: any) { message.error(e.message) }
@@ -412,7 +528,16 @@ function parentPrefix() {
             <template #icon><NIcon :component="TrashOutline" :size="14" /></template>
             {{ t('common.delete') }}
           </NButton>
-          <NButton v-if="store.currentBucket" size="small" quaternary type="error" class="pressable" @click="deleteBucket">{{ t('browser.deleteBucket') }}</NButton>
+                    <NButton size="small" secondary :disabled="!store.selectedKeys.length" class="pressable" @click="openTransfer('copy')">
+            {{ t('browser.copy') }}
+          </NButton>
+          <NButton size="small" secondary :disabled="!store.selectedKeys.length" class="pressable" @click="openTransfer('move')">
+            {{ t('browser.move') }}
+          </NButton>
+          <NButton size="small" secondary :disabled="!store.selectedKeys.length" class="pressable" @click="zipSelected">
+            {{ t('browser.zipDownload') }}
+          </NButton>
+<NButton v-if="store.currentBucket" size="small" quaternary type="error" class="pressable" @click="deleteBucket">{{ t('browser.deleteBucket') }}</NButton>
         </div>
         <NInput v-model:value="store.search" size="small" clearable :placeholder="t('browser.searchPlaceholder')" style="width: 200px">
           <template #prefix><NIcon :component="SearchOutline" :size="14" :depth="3" /></template>
@@ -452,6 +577,42 @@ function parentPrefix() {
         <NButton v-if="store.isTruncated" text type="primary" size="tiny" :loading="store.loadingObjects" @click="store.loadObjects(true)">{{ t('browser.loadMore') }}</NButton>
       </footer>
     </template>
+
+    
+    <NModal v-model:show="showTransfer" preset="card" :title="transferMode === 'copy' ? t('browser.copyTitle') : t('browser.moveTitle')" style="width: 440px" :bordered="false">
+      <div style="display:grid;gap:12px">
+        <div>
+          <div class="muted" style="font-size:12px;margin-bottom:4px">{{ t('browser.dstBucket') }}</div>
+          <NSelect v-model:value="dstBucket" :options="bucketOptions" filterable style="width:100%" />
+        </div>
+        <div>
+          <div class="muted" style="font-size:12px;margin-bottom:4px">{{ t('browser.dstPrefix') }}</div>
+          <NInput v-model:value="dstPrefix" :placeholder="t('browser.dstPrefixPh')" />
+        </div>
+      </div>
+      <template #footer>
+        <NSpace justify="end">
+          <NButton size="small" @click="showTransfer=false">{{ t('common.cancel') }}</NButton>
+          <NButton size="small" type="primary" :loading="transferBusy" @click="runTransfer">
+            {{ transferMode === 'copy' ? t('browser.runCopy') : t('browser.runMove') }}
+          </NButton>
+        </NSpace>
+      </template>
+    </NModal>
+
+    <NModal v-model:show="showText" preset="card" :title="textTitle || t('browser.textPreview')" style="width: min(860px, 94vw)" :bordered="false">
+      <div v-if="textLoading" class="muted">{{ t('common.loading') }}</div>
+      <div v-else>
+        <div v-if="textMeta" class="muted" style="font-size:12px;margin-bottom:8px">{{ textMeta }}</div>
+        <div v-if="textBinary" class="muted">{{ t('browser.binaryFile') }}</div>
+        <pre v-else class="text-preview">{{ textBody }}</pre>
+      </div>
+      <template #footer>
+        <NSpace justify="end">
+          <NButton size="small" type="primary" @click="showText=false">{{ t('common.close') }}</NButton>
+        </NSpace>
+      </template>
+    </NModal>
 
     <!-- image preview -->
     <NModal
@@ -778,5 +939,19 @@ function parentPrefix() {
   font-size: 13px;
   text-align: center;
   padding: 40px 12px;
+}
+.text-preview {
+  margin: 0;
+  max-height: min(65vh, 640px);
+  overflow: auto;
+  padding: 12px 14px;
+  background: #f5f5f7;
+  border-radius: 10px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: #1d1d1f;
 }
 </style>

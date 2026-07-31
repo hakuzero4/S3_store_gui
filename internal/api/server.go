@@ -66,6 +66,7 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("POST /api/objects/copy", s.handleCopyObject)
 	s.mux.HandleFunc("POST /api/objects/rename", s.handleRenameObject)
 	s.mux.HandleFunc("POST /api/objects/presign", s.handlePresign)
+	s.routesExtra()
 }
 
 func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
@@ -438,7 +439,7 @@ func (s *Server) handleUpload(w http.ResponseWriter, r *http.Request) {
 	if ct == "" {
 		ct = "application/octet-stream"
 	}
-	if err := c.PutObject(r.Context(), bucket, key, ct, file, hdr.Size); err != nil {
+	if err := c.UploadStream(r.Context(), bucket, key, ct, file, hdr.Size); err != nil {
 		writeErr(w, http.StatusBadGateway, err)
 		return
 	}
@@ -516,15 +517,29 @@ func (s *Server) handleCopyObject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var body struct {
-		Bucket string `json:"bucket"`
-		Src    string `json:"src"`
-		Dst    string `json:"dst"`
+		Bucket    string `json:"bucket"`
+		SrcBucket string `json:"srcBucket"`
+		DstBucket string `json:"dstBucket"`
+		Src       string `json:"src"`
+		Dst       string `json:"dst"`
 	}
-	if err := readJSON(r, &body); err != nil || body.Bucket == "" || body.Src == "" || body.Dst == "" {
-		writeErr(w, http.StatusBadRequest, errors.New("bucket, src, dst are required"))
+	if err := readJSON(r, &body); err != nil || body.Src == "" || body.Dst == "" {
+		writeErr(w, http.StatusBadRequest, errors.New("src and dst are required"))
 		return
 	}
-	if err := c.CopyObject(r.Context(), body.Bucket, body.Src, body.Dst); err != nil {
+	srcB := body.SrcBucket
+	if srcB == "" {
+		srcB = body.Bucket
+	}
+	dstB := body.DstBucket
+	if dstB == "" {
+		dstB = body.Bucket
+	}
+	if srcB == "" || dstB == "" {
+		writeErr(w, http.StatusBadRequest, errors.New("bucket is required"))
+		return
+	}
+	if err := c.CopyObjectTo(r.Context(), srcB, body.Src, dstB, body.Dst); err != nil {
 		writeErr(w, http.StatusBadGateway, err)
 		return
 	}

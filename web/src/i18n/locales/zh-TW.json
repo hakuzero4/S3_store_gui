@@ -79,7 +79,27 @@
     "presignTitle": "預先簽署連結",
     "openInNewTab": "在新視窗開啟",
     "imageLoadFailed": "圖片載入失敗",
-    "searchPlaceholder": "搜尋"
+    "searchPlaceholder": "搜尋",
+    "copy": "複製",
+    "move": "移動",
+    "zipDownload": "下載 ZIP",
+    "copyTitle": "複製物件",
+    "moveTitle": "移動物件",
+    "dstBucket": "目標 Bucket",
+    "dstPrefix": "目標前綴",
+    "dstPrefixPh": "folder/path/",
+    "runCopy": "複製",
+    "runMove": "移動",
+    "copyOk": "已複製 {n} 個物件",
+    "moveOk": "已移動 {n} 個物件",
+    "zipOk": "已開始 ZIP 下載",
+    "zipEmpty": "請先選擇檔案或資料夾",
+    "textPreview": "文本預覽",
+    "binaryFile": "二進位檔，無法預覽",
+    "truncated": "僅顯示前 {n} 位元組（已截斷）",
+    "uploadFailed": "上傳失敗：{name}",
+    "uploadRetry": "重試上傳（{n}）…",
+    "selectFirst": "請先選擇項目"
   },
   "profiles": {
     "title": "連線",
@@ -132,7 +152,12 @@
     "providerR2": "Cloudflare R2",
     "providerAws": "AWS S3",
     "providerMinio": "MinIO",
-    "providerOther": "其他 S3 相容"
+    "providerOther": "其他 S3 相容",
+    "export": "匯出",
+    "import": "匯入",
+    "exportOk": "已匯出設定",
+    "importOk": "已匯入 {n} 條設定",
+    "importFail": "匯入失敗"
   },
   "msg": {
     "requestFailed": "請求失敗"

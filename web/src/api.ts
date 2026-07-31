@@ -68,6 +68,66 @@ export const api = {
       .then((r) => r.data)
   },
 
+
+  batchCopy: (body: {
+    srcBucket: string
+    dstBucket?: string
+    srcPrefix?: string
+    dstPrefix?: string
+    keys?: string[]
+    prefixes?: string[]
+  }) => http.post<{ ok: boolean; count: number }>('/objects/batch-copy', body).then((r) => r.data),
+  batchMove: (body: {
+    srcBucket: string
+    dstBucket?: string
+    srcPrefix?: string
+    dstPrefix?: string
+    keys?: string[]
+    prefixes?: string[]
+  }) => http.post<{ ok: boolean; count: number }>('/objects/batch-move', body).then((r) => r.data),
+  moveObject: (body: { srcBucket?: string; dstBucket?: string; src: string; dst: string }) =>
+    http.post('/objects/move', body).then((r) => r.data),
+  objectContent: (bucket: string, key: string) =>
+    http
+      .get<{
+        key: string
+        size: number
+        contentType?: string
+        text: string
+        binary: boolean
+        truncated: boolean
+        maxBytes: number
+      }>('/objects/content', { params: { bucket, key } })
+      .then((r) => r.data),
+  zipDownload: async (body: { bucket: string; keys?: string[]; prefixes?: string[]; name?: string }) => {
+    const res = await http.post('/objects/zip', body, { responseType: 'blob' })
+    return res.data as Blob
+  },
+  exportProfiles: () =>
+    http.get('/profiles/export', { responseType: 'blob' }).then((r) => r.data as Blob),
+  importProfiles: (payload: unknown) =>
+    http.post<{ ok: boolean; imported: number }>('/profiles/import', payload).then((r) => r.data),
+
+  uploadWithRetry: async (
+    bucket: string,
+    key: string,
+    file: File,
+    onProgress?: (pct: number) => void,
+    retries = 2,
+  ) => {
+    let lastErr: unknown
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      try {
+        return await api.upload(bucket, key, file, onProgress)
+      } catch (e) {
+        lastErr = e
+        if (attempt === retries) break
+        await new Promise((r) => setTimeout(r, 500 * (attempt + 1)))
+      }
+    }
+    throw lastErr
+  },
+
   downloadUrl: (bucket: string, key: string) =>
     `/api/objects/download?bucket=${encodeURIComponent(bucket)}&key=${encodeURIComponent(key)}`,
   previewUrl: (bucket: string, key: string) =>
