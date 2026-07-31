@@ -136,6 +136,42 @@ Intended for **local / private network** use. Secrets are stored in plain JSON ?
 
 ---
 
+---
+
+## CI / CD (GitHub Actions)
+
+| Workflow | Trigger | What it does |
+|----------|---------|----------------|
+| CI | push/PR to main | Build frontend + Go binary + Docker smoke build |
+| Release | tag * (e.g. 0.1.0) | Multi-platform binaries + GitHub Release assets |
+| Docker | push main / tag * | Multi-arch image to GHCR |
+
+### Publish a release
+
+`ash
+git tag v0.1.0
+git push origin v0.1.0
+`
+
+Release assets (examples):
+
+- s3store_v0.1.0_windows_amd64.exe
+- s3store_v0.1.0_linux_amd64
+- s3store_v0.1.0_linux_arm64
+- s3store_v0.1.0_darwin_amd64
+- s3store_v0.1.0_darwin_arm64
+- checksums.txt
+
+### Docker image (GHCR)
+
+`ash
+docker pull ghcr.io/hakuzero4/s3_store_gui:latest
+# or a version tag
+docker pull ghcr.io/hakuzero4/s3_store_gui:0.1.0
+`
+
+> First time: GitHub Packages may require making the package public, or docker login ghcr.io.
+
 ## License
 
 MIT ? see [LICENSE](./LICENSE).
