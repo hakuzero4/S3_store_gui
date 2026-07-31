@@ -46,6 +46,15 @@ docker compose up -d --build
 
 Open http://127.0.0.1:17890 ? config volume: `/data/config.json`.
 
+```bash
+# plain docker
+docker build -t s3store:latest .
+docker run -d --name s3store \
+  -p 17890:17890 \
+  -v s3store-data:/data \
+  s3store:latest
+```
+
 ### Binary (Windows)
 
 ```powershell
@@ -62,21 +71,33 @@ CGO_ENABLED=0 go build -trimpath -ldflags "-s -w -X main.version=0.1.0" -o dist/
 ./dist/s3store -no-browser
 ```
 
+`config.json` is written **next to the executable** by default.
+
 ---
 
-## Cloudflare R2
+## Cloudflare R2 setup
+
+1. Cloudflare Dashboard ? **R2** ? **Manage R2 API Tokens** ? create an **Account API token**
+2. Copy **Access Key ID** and **Secret Access Key** (secret is shown once)
+3. Copy **S3 API** endpoint from Account details: `https://<ACCOUNT_ID>.r2.cloudflarestorage.com`
+4. In S3 Store ? **Connections**:
 
 | Field | Value |
 |-------|--------|
-| Endpoint | Dashboard ? R2 ? **S3 API** URL |
+| Provider | Cloudflare R2 |
+| Endpoint | S3 API URL from dashboard |
 | Region | `auto` |
-| Access / Secret | R2 **Account API token** key pair |
+| Access Key / Secret | R2 API token pair |
 | Force Path Style | Off |
 
-Do not use the `cfat_?` Cloudflare API token value as S3 keys.
-Do not use a public custom domain as the S3 endpoint.
+**Notes**
 
-Same connection ? many buckets (dropdown). Different accounts ? multiple profiles under **Connections**.
+- Do **not** use the `cfat_?` ?token value? ? that is for Cloudflare?s API, not S3.
+- Do **not** use a public custom domain as the S3 API endpoint.
+- One connection can manage **many buckets** (dropdown in the file browser).
+- Use multiple connections when you have **different accounts / keys**.
+
+Official docs: [R2 S3 API](https://developers.cloudflare.com/r2/api/s3/api/) ? [API tokens](https://developers.cloudflare.com/r2/api/tokens/)
 
 ---
 
@@ -94,40 +115,92 @@ Locale files: `web/src/i18n/locales/*.json`
 
 ## Configuration
 
-| Flag / Env | Description |
-|------------|-------------|
-| `-addr` / `S3STORE_ADDR` | Listen address (Docker: `0.0.0.0:17890`) |
-| `-config` / `S3STORE_CONFIG` | Path to `config.json` |
-| `-no-browser` / `S3STORE_NO_BROWSER` | Do not open browser |
-| `-version` | Print version |
+### CLI flags
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `-addr` | Listen address | `127.0.0.1:17890` |
+| `-config` | Path to `config.json` | Next to the binary |
+| `-no-browser` | Do not open a browser | Opens on desktop by default |
+| `-version` | Print version | |
+
+### Environment variables
+
+| Variable | Description |
+|----------|-------------|
+| `S3STORE_ADDR` | Same as `-addr` (Docker default `0.0.0.0:17890`) |
+| `S3STORE_CONFIG` | Same as `-config` (Docker default `/data/config.json`) |
+| `S3STORE_NO_BROWSER` | Set to disable auto-open browser |
+
+Example:
+
+```bash
+./s3store -addr 0.0.0.0:8080 -config /etc/s3store/config.json -no-browser
+```
 
 ---
 
 ## Development
 
+**Requirements:** Go 1.22+, Node.js 20+
+
 ```bash
+# API server
 go run ./cmd/s3store -addr 127.0.0.1:17890 -no-browser
-cd web && npm install && npm run dev
+
+# Frontend (hot reload)
+cd web
+npm install
+npm run dev
 ```
 
-UI: http://127.0.0.1:5173 (API proxied to `:17890`)
+- UI: http://127.0.0.1:5173
+- Vite proxies `/api` ? `http://127.0.0.1:17890`
+
+### Project layout
+
+```text
+cmd/s3store/          # main entry
+internal/api/         # HTTP API
+internal/config/      # config.json persistence
+internal/s3client/    # AWS SDK v2 S3 client (R2-compatible)
+internal/static/      # go:embed of web/dist
+web/                  # Vue 3 + Naive UI + Vite + Pinia + vue-i18n
+web/src/i18n/         # locale messages
+build.ps1             # Windows release script
+Dockerfile            # multi-stage image
+docker-compose.yml
+.github/workflows/    # CI, Release, Docker
+```
+
+### Build pipeline
+
+1. `npm run build` ? `web/dist`
+2. Copy into `internal/static/dist`
+3. `go build` embeds static assets via `//go:embed`
+4. Result: one binary that serves UI + API
 
 ---
 
-## Project layout
+## HTTP API (overview)
 
-```text
-cmd/s3store/          entry
-internal/api/         HTTP API
-internal/config/      config.json
-internal/s3client/    S3/R2 client
-internal/static/      embedded web dist
-web/                  Vue 3 + vue-i18n + Naive UI
-web/src/i18n/         locale messages
-Dockerfile
-docker-compose.yml
-.github/workflows/   CI, Release, Docker
-```
+| Method | Path | Purpose |
+|--------|------|---------|
+| `GET` | `/api/health` | Health check |
+| `GET`/`POST` | `/api/profiles` | List / create connection profiles |
+| `PUT`/`DELETE` | `/api/profiles/{id}` | Update / delete profile |
+| `POST` | `/api/profiles/{id}/activate` | Activate profile |
+| `POST` | `/api/profiles/test` | Test credentials |
+| `GET`/`POST` | `/api/buckets` | List / create buckets |
+| `DELETE` | `/api/buckets/{name}` | Delete bucket |
+| `GET` | `/api/objects` | List objects (`bucket`, `prefix`) |
+| `POST` | `/api/objects/upload` | Multipart upload |
+| `GET` | `/api/objects/download` | Download (`inline=1` for preview) |
+| `POST` | `/api/objects/delete` | Delete keys / prefixes |
+| `POST` | `/api/objects/folder` | Create folder key |
+| `POST` | `/api/objects/rename` | Rename object |
+| `POST` | `/api/objects/presign` | Presigned GET URL |
+| `GET` | `/api/objects/detail` | Head object metadata |
 
 ---
 
@@ -146,6 +219,15 @@ git tag v0.1.0
 git push origin v0.1.0
 ```
 
+Release assets (examples):
+
+- `s3store_v0.1.0_windows_amd64.exe`
+- `s3store_v0.1.0_linux_amd64`
+- `s3store_v0.1.0_linux_arm64`
+- `s3store_v0.1.0_darwin_amd64`
+- `s3store_v0.1.0_darwin_arm64`
+- `checksums.txt`
+
 ### Docker image (GHCR)
 
 ```bash
@@ -153,11 +235,37 @@ docker pull ghcr.io/hakuzero4/s3_store_gui:latest
 docker pull ghcr.io/hakuzero4/s3_store_gui:0.1.0
 ```
 
+> First time: GitHub Packages may require making the package public, or `docker login ghcr.io`.
+
 ---
 
 ## Security
 
-Intended for **local / private network** use. Secrets are stored in plain JSON ? protect the host and avoid exposing the port without TLS and auth.
+- Designed for **local** or **private network** use.
+- Connection secrets are stored in plain JSON on disk (`config.json`). Protect the file and the host.
+- Do not expose the port publicly without a reverse proxy, TLS, and access control.
+- Prefer least-privilege R2/S3 tokens (bucket-scoped when possible).
+
+---
+
+## Tech stack
+
+| Layer | Stack |
+|-------|--------|
+| UI | Vue 3, TypeScript, Vite, Naive UI, Pinia, Vue Router, vue-i18n |
+| API | Go `net/http`, AWS SDK for Go v2 (`service/s3`) |
+| Ship | `go:embed`, `CGO_ENABLED=0`, multi-stage Docker (Alpine) |
+
+---
+
+## Roadmap / ideas
+
+- [ ] Multipart upload for large files
+- [ ] Object copy across prefixes / buckets
+- [ ] Dark mode toggle
+- [ ] Optional basic auth for Docker deployments
+
+Contributions and issues are welcome.
 
 ---
 
