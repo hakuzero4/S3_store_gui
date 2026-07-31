@@ -196,7 +196,7 @@ function openPreview(row: ObjectItem) {
   if (!store.currentBucket) return
   previewName.value = row.name
   previewKey.value = row.key
-  previewError.value = t('browser.imageLoadFailed')
+  previewError.value = ''
   previewLoading.value = true
   // Version by ETag/LastModified so unchanged objects hit browser + server disk cache.
   const ver = row.etag || row.lastModified || String(Date.now())
@@ -206,6 +206,7 @@ function openPreview(row: ObjectItem) {
 
 function onPreviewLoad() {
   previewLoading.value = false
+  previewError.value = ''
 }
 function onPreviewError() {
   previewLoading.value = false
@@ -214,7 +215,8 @@ function onPreviewError() {
 function closePreview() {
   showPreview.value = false
   previewSrc.value = ''
-  previewError.value = t('browser.imageLoadFailed')
+  previewError.value = ''
+  previewLoading.value = false
 }
 function openPreviewInTab() {
   if (previewSrc.value) window.open(previewSrc.value, '_blank')
