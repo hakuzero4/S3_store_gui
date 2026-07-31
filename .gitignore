@@ -1,0 +1,14 @@
+﻿node_modules/
+web/node_modules/
+web/dist/
+/dist/
+*.exe
+*.log
+npm-install.err
+npm-install.log
+.DS_Store
+.idea/
+.vscode/
+config.json
+config.json.tmp
+data/

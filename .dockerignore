@@ -1,0 +1,19 @@
+﻿# Build context ignores
+.git
+.github
+.idea
+.vscode
+dist
+web/dist
+web/node_modules
+node_modules
+*.exe
+*.log
+config.json
+config.json.tmp
+npm-install.log
+npm-install.err
+README.md
+Dockerfile
+.dockerignore
+**/*_test.go

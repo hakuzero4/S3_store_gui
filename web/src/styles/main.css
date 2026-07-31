@@ -1,0 +1,128 @@
+﻿/* macOS Finder-like light UI — full viewport height chain */
+:root {
+  color-scheme: light;
+  --label: #1d1d1f;
+  --secondary: #6e6e73;
+  --tertiary: #8e8e93;
+  --quaternary: #c7c7cc;
+
+  --window: #ffffff;
+  --sidebar: #f6f6f6;
+  --sidebar-active: #e8e8ed;
+  --sidebar-hover: #ececec;
+  --canvas: #ffffff;
+  --row-hover: #f5f5f7;
+  --row-selected: #dbeafe;
+  --toolbar: #fafafa;
+
+  --line: #e5e5ea;
+  --line-soft: #efeff4;
+  --blue: #007aff;
+  --blue-soft: rgba(0, 122, 255, 0.12);
+  --red: #ff3b30;
+  --green: #34c759;
+
+  --radius: 8px;
+  --sidebar-w: 220px;
+
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", "PingFang SC", "Microsoft YaHei UI", system-ui, sans-serif;
+  --mono: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+
+  font-family: var(--font);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  height: 100%;
+  height: 100dvh;
+}
+
+body {
+  margin: 0;
+  height: 100%;
+  min-height: 100%;
+  min-height: 100dvh;
+  overflow: hidden;
+  background: #fff;
+  color: var(--label);
+}
+
+#app {
+  height: 100%;
+  min-height: 100%;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Naive UI providers must stretch full height */
+#app .n-config-provider,
+#app .n-loading-bar-provider,
+#app .n-dialog-provider,
+#app .n-modal-provider,
+#app .n-notification-provider,
+#app .n-message-provider {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+  display: flex !important;
+  flex-direction: column;
+}
+
+button, input { font: inherit; }
+a { color: inherit; text-decoration: none; }
+button { -webkit-tap-highlight-color: transparent; }
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.18);
+  border-radius: 99px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+.app-shell {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+  width: 100%;
+  display: grid;
+  grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
+  grid-template-rows: 1fr;
+  background: var(--window);
+  overflow: hidden;
+}
+
+.muted { color: var(--secondary); }
+.mono { font-family: var(--mono); }
+.truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.pressable { transition: transform 80ms ease-out, background 120ms ease; }
+.pressable:active { transform: scale(0.98); }
+
+.drop-active {
+  box-shadow: inset 0 0 0 2px rgba(0,122,255,0.45);
+  background: rgba(0,122,255,0.03) !important;
+}
+
+:focus-visible {
+  outline: 2px solid rgba(0,122,255,0.5);
+  outline-offset: 1px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+  .pressable:active { transform: none; }
+}
+
+@media (max-width: 900px) {
+  .app-shell {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+  }
+}

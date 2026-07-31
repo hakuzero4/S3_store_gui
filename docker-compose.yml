@@ -1,0 +1,18 @@
+﻿services:
+  s3store:
+    build: .
+    image: s3store:latest
+    container_name: s3store
+    ports:
+      - "17890:17890"
+    volumes:
+      - s3store-data:/data
+    environment:
+      S3STORE_ADDR: 0.0.0.0:17890
+      S3STORE_CONFIG: /data/config.json
+      S3STORE_NO_BROWSER: "1"
+      TZ: Asia/Shanghai
+    restart: unless-stopped
+
+volumes:
+  s3store-data:
