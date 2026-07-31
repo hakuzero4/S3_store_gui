@@ -1,5 +1,6 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, reactive, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import {
   NButton, NForm, NFormItem, NGrid, NGi, NIcon, NInput, NSelect,
   NSpace, NSwitch, NTag, NPopconfirm, useMessage,
@@ -8,12 +9,13 @@ import {
   AddOutline, CheckmarkCircleOutline, CloudOutline, FlashOutline,
   SaveOutline, TrashOutline,
 } from '@vicons/ionicons5'
-import { api, providerLabel } from '../api'
+import { api, providerKey } from '../api'
 import { useAppStore } from '../stores/app'
 import type { Profile } from '../types'
 
 const store = useAppStore()
 const message = useMessage()
+const { t } = useI18n()
 const editingId = ref<string | null>(null)
 const testing = ref(false)
 const saving = ref(false)
@@ -23,19 +25,19 @@ const form = reactive({
   accessKey: '', secretKey: '', forcePathStyle: false, defaultBucket: '',
 })
 
-const providerOptions = [
-  { label: 'Cloudflare R2', value: 'r2' },
-  { label: 'AWS S3', value: 'aws' },
-  { label: 'MinIO', value: 'minio' },
-  { label: '其他 S3 兼容', value: 'other' },
-]
+const providerOptions = computed(() => [
+  { label: t('profiles.providerR2'), value: 'r2' },
+  { label: t('profiles.providerAws'), value: 'aws' },
+  { label: t('profiles.providerMinio'), value: 'minio' },
+  { label: t('profiles.providerOther'), value: 'other' },
+])
 
 const endpointPlaceholder = computed(() => {
   switch (form.provider) {
-    case 'r2': return 'https://<ACCOUNT_ID>.r2.cloudflarestorage.com'
-    case 'aws': return '留空使用 AWS 默认，或填 https://s3.us-east-1.amazonaws.com'
-    case 'minio': return 'http://127.0.0.1:9000'
-    default: return 'https://s3.example.com'
+    case 'r2': return t('profiles.phEndpointR2')
+    case 'aws': return t('profiles.phEndpointAws')
+    case 'minio': return t('profiles.phEndpointMinio')
+    default: return t('profiles.phEndpointOther')
   }
 })
 
@@ -94,7 +96,7 @@ async function testConn() {
       provider: form.provider,
     })
     const n = res.buckets?.length ?? 0
-    message.success(res.warning ? ('连通，但列桶有警告：' + res.warning) : ('连接成功，发现 ' + n + ' 个 Bucket'))
+    message.success(res.warning ? t('profiles.testWarn', { msg: res.warning }) : t('profiles.testOk', { n }))
   } catch (e: any) {
     message.error(e.message)
   } finally {
@@ -103,9 +105,9 @@ async function testConn() {
 }
 
 async function save(activate = true) {
-  if (!form.name.trim()) return message.warning('请填写名称')
-  if (!form.accessKey.trim()) return message.warning('请填写 Access Key')
-  if (!form.secretKey.trim() && !form.id) return message.warning('请填写 Secret Key')
+  if (!form.name.trim()) return message.warning(t('profiles.nameRequired'))
+  if (!form.accessKey.trim()) return message.warning(t('profiles.accessRequired'))
+  if (!form.secretKey.trim() && !form.id) return message.warning(t('profiles.secretRequired'))
   saving.value = true
   try {
     const payload: any = {
@@ -124,14 +126,15 @@ async function save(activate = true) {
       ? await api.updateProfile(form.id, payload)
       : await api.saveProfile(payload)
     if (activate && saved.id) {
-      try { await api.activateProfile(saved.id) }
-      catch (e: any) {
-        message.warning('已保存，但激活失败：' + e.message)
+      try {
+        await api.activateProfile(saved.id)
+      } catch (e: any) {
+        message.warning(t('profiles.activateFailed', { msg: e.message }))
         await store.loadProfiles()
         return
       }
     }
-    message.success(activate ? '已保存并激活' : '已保存')
+    message.success(activate ? t('profiles.savedActivated') : t('profiles.savedOk'))
     await store.loadProfiles()
     loadProfile(store.profiles.find((p) => p.id === saved.id) || saved)
     if (activate) {
@@ -150,7 +153,7 @@ async function save(activate = true) {
 async function activate(p: Profile) {
   try {
     await api.activateProfile(p.id)
-    message.success('已切换到 ' + p.name)
+    message.success(t('profiles.switched', { name: p.name }))
     await store.loadProfiles()
     await store.loadBuckets()
     if (store.currentBucket) await store.loadObjects()
@@ -162,7 +165,7 @@ async function activate(p: Profile) {
 async function remove(p: Profile) {
   try {
     await api.deleteProfile(p.id)
-    message.success('已删除')
+    message.success(t('common.deleted'))
     if (editingId.value === p.id) resetForm('r2')
     await store.loadProfiles()
   } catch (e: any) {
@@ -175,24 +178,24 @@ resetForm('r2')
 
 <template>
   <div class="profiles">
-    <header class="hero surface">
+    <header class="hero">
       <div>
-        <h1>存储连接</h1>
-        <p class="subhead hero-sub">配置 R2 / S3 / MinIO。密钥保存在程序目录的 config.json。</p>
+        <h1>{{ t('profiles.title') }}</h1>
+        <p class="subhead hero-sub">{{ t('profiles.subtitle') }}</p>
       </div>
       <div class="hero-actions">
         <NButton type="primary" class="pressable" @click="resetForm('r2')">
           <template #icon><NIcon :component="AddOutline" /></template>
-          新建 R2
+          {{ t('profiles.newR2') }}
         </NButton>
-        <NButton secondary class="pressable" @click="resetForm('aws')">新建 AWS</NButton>
+        <NButton secondary class="pressable" @click="resetForm('aws')">{{ t('profiles.newAws') }}</NButton>
       </div>
     </header>
 
     <div class="body">
-      <section class="list surface">
-        <div class="section-label">已保存</div>
-        <div v-if="!store.profiles.length" class="empty subhead">暂无配置，请在右侧创建。</div>
+      <section class="list">
+        <div class="section-label">{{ t('profiles.saved') }}</div>
+        <div v-if="!store.profiles.length" class="empty subhead">{{ t('profiles.empty') }}</div>
         <button
           v-for="p in store.profiles"
           :key="p.id"
@@ -206,69 +209,73 @@ resetForm('r2')
             <div class="item-text">
               <div class="item-name">
                 <span class="truncate">{{ p.name }}</span>
-                <NTag v-if="p.id === store.activeId" size="tiny" type="success" round :bordered="false">使用中</NTag>
+                <NTag v-if="p.id === store.activeId" size="tiny" type="success" round :bordered="false">{{ t('profiles.inUse') }}</NTag>
               </div>
-              <div class="item-sub caption truncate">{{ providerLabel(p.provider) }} · {{ p.endpoint || '默认 AWS 端点' }}</div>
+              <div class="item-sub caption truncate">
+                {{ t(providerKey(p.provider)) }} · {{ p.endpoint || t('profiles.defaultAwsEndpoint') }}
+              </div>
             </div>
           </div>
           <div class="item-actions" @click.stop>
-            <NButton size="tiny" quaternary type="primary" class="pressable" :disabled="p.id === store.activeId" @click="activate(p)">激活</NButton>
+            <NButton size="tiny" quaternary type="primary" class="pressable" :disabled="p.id === store.activeId" @click="activate(p)">
+              {{ t('profiles.activate') }}
+            </NButton>
             <NPopconfirm @positive-click="remove(p)">
               <template #trigger>
                 <NButton size="tiny" quaternary type="error" class="pressable">
                   <template #icon><NIcon :component="TrashOutline" /></template>
                 </NButton>
               </template>
-              确认删除该配置？
+              {{ t('profiles.confirmDelete') }}
             </NPopconfirm>
           </div>
         </button>
       </section>
 
-      <section class="editor surface">
-        <div class="section-label">{{ editingId ? '编辑配置' : '新建配置' }}</div>
+      <section class="editor">
+        <div class="section-label">{{ editingId ? t('profiles.edit') : t('profiles.create') }}</div>
         <NForm label-placement="top" size="medium" :show-require-mark="false">
           <NGrid :cols="2" :x-gap="14" :y-gap="0">
             <NGi>
-              <NFormItem label="显示名称">
-                <NInput v-model:value="form.name" placeholder="生产 R2" />
+              <NFormItem :label="t('profiles.displayName')">
+                <NInput v-model:value="form.name" :placeholder="t('profiles.phName')" />
               </NFormItem>
             </NGi>
             <NGi>
-              <NFormItem label="提供商">
+              <NFormItem :label="t('profiles.provider')">
                 <NSelect :value="form.provider" :options="providerOptions" @update:value="onProviderChange" />
               </NFormItem>
             </NGi>
             <NGi :span="2">
-              <NFormItem label="Endpoint">
+              <NFormItem :label="t('profiles.endpoint')">
                 <NInput v-model:value="form.endpoint" :placeholder="endpointPlaceholder" class="mono-input" />
               </NFormItem>
             </NGi>
             <NGi>
-              <NFormItem label="Region">
-                <NInput v-model:value="form.region" placeholder="auto / us-east-1" />
+              <NFormItem :label="t('profiles.region')">
+                <NInput v-model:value="form.region" :placeholder="t('profiles.phRegion')" />
               </NFormItem>
             </NGi>
             <NGi>
-              <NFormItem label="默认 Bucket">
-                <NInput v-model:value="form.defaultBucket" placeholder="可选" />
+              <NFormItem :label="t('profiles.defaultBucket')">
+                <NInput v-model:value="form.defaultBucket" :placeholder="t('profiles.optional')" />
               </NFormItem>
             </NGi>
             <NGi>
-              <NFormItem label="Access Key">
-                <NInput v-model:value="form.accessKey" placeholder="Access Key ID" class="mono-input" />
+              <NFormItem :label="t('profiles.accessKey')">
+                <NInput v-model:value="form.accessKey" :placeholder="t('profiles.phAccess')" class="mono-input" />
               </NFormItem>
             </NGi>
             <NGi>
-              <NFormItem :label="editingId ? 'Secret Key（留空保留）' : 'Secret Key'">
-                <NInput v-model:value="form.secretKey" type="password" show-password-on="click" placeholder="Secret Access Key" class="mono-input" />
+              <NFormItem :label="editingId ? t('profiles.secretKeep') : t('profiles.secretKey')">
+                <NInput v-model:value="form.secretKey" type="password" show-password-on="click" :placeholder="t('profiles.phSecret')" class="mono-input" />
               </NFormItem>
             </NGi>
             <NGi :span="2">
-              <NFormItem label="Force Path Style">
+              <NFormItem :label="t('profiles.forcePathStyle')">
                 <div class="switch-row">
                   <NSwitch v-model:value="form.forcePathStyle" />
-                  <span class="subhead">MinIO 等通常开启；R2 官方 endpoint 保持关闭</span>
+                  <span class="subhead">{{ t('profiles.forcePathHelp') }}</span>
                 </div>
               </NFormItem>
             </NGi>
@@ -276,27 +283,27 @@ resetForm('r2')
         </NForm>
 
         <div v-if="form.provider === 'r2'" class="tips">
-          <div class="tips-title headline">Cloudflare R2</div>
+          <div class="tips-title headline">{{ t('profiles.r2TipsTitle') }}</div>
           <ul class="subhead">
-            <li>使用账户 API 地址，不要用自定义公开域名</li>
-            <li>Region 填 <code>auto</code></li>
-            <li>在 R2 → Manage R2 API Tokens 创建密钥</li>
+            <li>{{ t('profiles.r2Tip1') }}</li>
+            <li>{{ t('profiles.r2Tip2') }}</li>
+            <li>{{ t('profiles.r2Tip3') }}</li>
           </ul>
         </div>
 
         <div class="actions">
           <NButton :loading="testing" secondary class="pressable" @click="testConn">
             <template #icon><NIcon :component="FlashOutline" /></template>
-            测试连接
+            {{ t('profiles.test') }}
           </NButton>
           <div class="actions-right">
             <NButton :loading="saving" secondary class="pressable" @click="save(false)">
               <template #icon><NIcon :component="SaveOutline" /></template>
-              仅保存
+              {{ t('profiles.saveOnly') }}
             </NButton>
             <NButton :loading="saving" type="primary" class="pressable" @click="save(true)">
               <template #icon><NIcon :component="CheckmarkCircleOutline" /></template>
-              保存并激活
+              {{ t('profiles.saveActivate') }}
             </NButton>
           </div>
         </div>
@@ -318,17 +325,26 @@ resetForm('r2')
 }
 .hero {
   padding: 14px 16px;
-  display: flex; justify-content: space-between; gap: 12px; align-items: center;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
   border-bottom: 1px solid #efeff4;
   background: #fff;
 }
-.large-title, .hero h1, h1.large-title {
-  margin: 0 0 4px; font-size: 20px; font-weight: 700; letter-spacing: -0.02em;
+.hero h1 {
+  margin: 0 0 4px;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
-.hero .subhead, .hero-sub {
-  margin: 0; font-size: 12px; color: #8e8e93; max-width: 460px;
+.hero-sub {
+  margin: 0;
+  font-size: 12px;
+  color: #8e8e93;
+  max-width: 480px;
 }
-.hero-actions { display: flex; gap: 6px; }
+.hero-actions { display: flex; gap: 6px; flex-wrap: wrap; }
 .body {
   display: grid;
   grid-template-columns: 280px minmax(0, 1fr);
@@ -350,17 +366,26 @@ resetForm('r2')
   background: #fff;
 }
 .section-label {
-  font-size: 11px; font-weight: 600; color: #8e8e93;
-  letter-spacing: 0.04em; text-transform: uppercase;
+  font-size: 11px;
+  font-weight: 600;
+  color: #8e8e93;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
   margin-bottom: 10px;
 }
 .empty { padding: 24px 8px; text-align: center; font-size: 12px; color: #8e8e93; }
 .item {
-  width: 100%; border: 1px solid #e5e5ea; border-radius: 8px;
-  padding: 10px; margin-bottom: 8px; cursor: pointer;
-  background: #fff; text-align: left; color: inherit;
+  width: 100%;
+  border: 1px solid #e5e5ea;
+  border-radius: 8px;
+  padding: 10px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  background: #fff;
+  text-align: left;
+  color: inherit;
 }
-.item:hover { border-color: #c7c7cc; background: #fff; }
+.item:hover { border-color: #c7c7cc; }
 .item.selected { border-color: #007aff; box-shadow: 0 0 0 3px rgba(0,122,255,0.12); }
 .item.active { background: #f0f7ff; border-color: #b6d6ff; }
 .item-main { display: flex; gap: 8px; align-items: flex-start; }
@@ -381,15 +406,16 @@ resetForm('r2')
 }
 .tips-title { font-weight: 600; margin-bottom: 4px; font-size: 13px; }
 .tips ul { margin: 0; padding-left: 16px; color: #6e6e73; line-height: 1.55; }
-.tips code {
-  font-family: ui-monospace, monospace; font-size: 11px;
-  background: #e8e8ed; padding: 0 4px; border-radius: 4px; color: #1d1d1f;
-}
 .actions {
   display: flex; justify-content: space-between; gap: 10px; align-items: center; flex-wrap: wrap;
   padding-top: 8px; border-top: 1px solid #efeff4; margin-top: 4px;
 }
-.actions-right { display: flex; gap: 6px; }
+.actions-right { display: flex; gap: 6px; flex-wrap: wrap; }
 :deep(.mono-input input) { font-family: ui-monospace, monospace; font-size: 12px; }
-@media (max-width: 1000px) { .body { grid-template-columns: 1fr; } .list { border-right: 0; border-bottom: 1px solid #efeff4; } }
+.subhead { color: #6e6e73; font-size: 12px; }
+.caption { font-size: 11px; color: #8e8e93; }
+@media (max-width: 1000px) {
+  .body { grid-template-columns: 1fr; }
+  .list { border-right: 0; border-bottom: 1px solid #efeff4; }
+}
 </style>

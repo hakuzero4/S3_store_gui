@@ -1,21 +1,34 @@
 ﻿<script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { NIcon } from 'naive-ui'
+import { useI18n } from 'vue-i18n'
+import { NIcon, NSelect } from 'naive-ui'
 import { CloudOutline, FolderOpenOutline, SettingsOutline } from '@vicons/ionicons5'
 import { useAppStore } from '../stores/app'
-import { providerLabel } from '../api'
+import { providerKey } from '../api'
+import { SUPPORT_LOCALES, setStoredLocale, type AppLocale } from '../i18n'
 
 const store = useAppStore()
 const route = useRoute()
 const router = useRouter()
+const { t, locale } = useI18n()
 
-const nav = [
-  { name: 'browser', label: '文件', icon: FolderOpenOutline, path: '/' },
-  { name: 'profiles', label: '连接', icon: SettingsOutline, path: '/profiles' },
-]
+const nav = computed(() => [
+  { name: 'browser', label: t('app.navFiles'), icon: FolderOpenOutline, path: '/' },
+  { name: 'profiles', label: t('app.navConnections'), icon: SettingsOutline, path: '/profiles' },
+])
 
-const statusText = computed(() => store.activeProfile?.name || '未连接')
+const statusText = computed(() => store.activeProfile?.name || t('app.notConnected'))
+const providerText = computed(() =>
+  store.activeProfile ? t(providerKey(store.activeProfile.provider)) : '',
+)
+
+const langOptions = SUPPORT_LOCALES.map((l) => ({ label: l.label, value: l.code }))
+
+function onLocaleChange(code: AppLocale) {
+  locale.value = code
+  setStoredLocale(code)
+}
 </script>
 
 <template>
@@ -24,8 +37,8 @@ const statusText = computed(() => store.activeProfile?.name || '未连接')
       <div class="brand">
         <div class="logo"><NIcon :component="CloudOutline" :size="15" /></div>
         <div>
-          <div class="brand-title">S3 Store</div>
-          <div class="brand-sub">对象存储</div>
+          <div class="brand-title">{{ t('app.name') }}</div>
+          <div class="brand-sub">{{ t('app.tagline') }}</div>
         </div>
       </div>
 
@@ -44,10 +57,23 @@ const statusText = computed(() => store.activeProfile?.name || '未连接')
       </nav>
 
       <div class="side-bottom">
-        <div class="conn-kicker">当前连接</div>
+        <div class="lang-row">
+          <div class="conn-kicker">{{ t('app.language') }}</div>
+          <NSelect
+            size="tiny"
+            :value="locale"
+            :options="langOptions"
+            :consistent-menu-width="false"
+            style="width: 100%"
+            @update:value="onLocaleChange"
+          />
+        </div>
+        <div class="conn-kicker" style="margin-top: 12px">{{ t('app.currentConnection') }}</div>
         <div class="conn-name truncate">{{ statusText }}</div>
-        <div v-if="store.activeProfile" class="conn-provider">{{ providerLabel(store.activeProfile.provider) }}</div>
-        <button v-else type="button" class="conn-link pressable" @click="router.push('/profiles')">添加连接…</button>
+        <div v-if="store.activeProfile" class="conn-provider">{{ providerText }}</div>
+        <button v-else type="button" class="conn-link pressable" @click="router.push('/profiles')">
+          {{ t('app.addConnection') }}
+        </button>
       </div>
     </aside>
 
@@ -68,14 +94,12 @@ const statusText = computed(() => store.activeProfile?.name || '未连接')
   overflow: hidden;
   padding: 14px 10px 12px;
 }
-
 .brand {
   display: flex;
   gap: 10px;
   align-items: center;
   padding: 2px 8px 14px;
 }
-
 .logo {
   width: 28px;
   height: 28px;
@@ -86,7 +110,6 @@ const statusText = computed(() => store.activeProfile?.name || '未连接')
   background: linear-gradient(180deg, #5ac8fa, #007aff);
   box-shadow: inset 0 0.5px 0 rgba(255,255,255,0.35);
 }
-
 .brand-title {
   font-size: 13px;
   font-weight: 650;
@@ -98,13 +121,11 @@ const statusText = computed(() => store.activeProfile?.name || '未连接')
   color: var(--tertiary);
   margin-top: 1px;
 }
-
 .nav {
   display: flex;
   flex-direction: column;
   gap: 1px;
 }
-
 .nav-item {
   appearance: none;
   border: 0;
@@ -128,12 +149,12 @@ const statusText = computed(() => store.activeProfile?.name || '未连接')
   color: var(--label);
 }
 .nav-item.active :deep(svg) { color: var(--blue); }
-
 .side-bottom {
   margin-top: auto;
   padding: 12px 10px 4px;
   border-top: 1px solid var(--line);
 }
+.lang-row { margin-bottom: 4px; }
 .conn-kicker {
   font-size: 11px;
   color: var(--tertiary);
@@ -159,7 +180,6 @@ const statusText = computed(() => store.activeProfile?.name || '未连接')
   padding: 0;
   cursor: pointer;
 }
-
 .main {
   min-width: 0;
   min-height: 0;

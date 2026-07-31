@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, h, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import {
   NButton, NDataTable, NEmpty, NIcon, NInput, NModal, NProgress, NSpin,
   NSelect, NSpace, NTag, NTooltip, NUpload, useDialog, useMessage,
@@ -17,6 +18,7 @@ import type { ObjectItem } from '../types'
 const store = useAppStore()
 const message = useMessage()
 const dialog = useDialog()
+const { t, locale } = useI18n()
 
 const dropOver = ref(false)
 const uploading = ref(false)
@@ -74,10 +76,12 @@ function fileIconColor(row: ObjectItem) {
   return '#8E8E93'
 }
 
-const columns = computed<DataTableColumns<ObjectItem & { _rowKey: string }>>(() => [
+const columns = computed<DataTableColumns<ObjectItem & { _rowKey: string }>>(() => {
+  void locale.value
+  return [
   { type: 'selection', width: 36 },
   {
-    title: '名称', key: 'name',
+    title: t('common.name'), key: 'name',
     render(row) {
       const Icon = fileIcon(row)
       return h(
@@ -116,11 +120,11 @@ const columns = computed<DataTableColumns<ObjectItem & { _rowKey: string }>>(() 
     },
   },
   {
-    title: '大小', key: 'size', width: 96, align: 'right' as const,
+    title: t('common.size'), key: 'size', width: 96, align: 'right' as const,
     render: (row) => h('span', { class: 'meta' }, row.isDir ? '\u2014' : formatBytes(row.size)),
   },
   {
-    title: '修改时间', key: 'lastModified', width: 148,
+    title: t('common.modified'), key: 'lastModified', width: 148,
     render: (row) => h('span', { class: 'meta' }, formatTime(row.lastModified)),
   },
   {
@@ -128,13 +132,13 @@ const columns = computed<DataTableColumns<ObjectItem & { _rowKey: string }>>(() 
     render(row) {
       if (row.isDir) {
         return h('div', { class: 'acts' }, [
-          tip(FolderOutline, '打开', () => onOpen(row)),
-          tip(TrashOutline, '删除', () => {
+          tip(FolderOutline, t('common.open'), () => onOpen(row)),
+          tip(TrashOutline, t('common.delete'), () => {
             dialog.warning({
-              title: '删除文件夹',
-              content: '删除该文件夹及全部内容？',
-              positiveText: '删除',
-              negativeText: '取消',
+              title: t('browser.deleteFolderTitle'),
+              content: t('browser.deleteFolderBody'),
+              positiveText: t('common.delete'),
+              negativeText: t('common.cancel'),
               onPositiveClick: () => removeItems([row]),
             })
           }, true),
@@ -142,19 +146,19 @@ const columns = computed<DataTableColumns<ObjectItem & { _rowKey: string }>>(() 
       }
       const acts: any[] = []
       if (isImageName(row.name)) {
-        acts.push(tip(EyeOutline, '预览', () => openPreview(row)))
+        acts.push(tip(EyeOutline, t('common.preview'), () => openPreview(row)))
       }
       acts.push(
-        tip(DownloadOutline, '下载', () => downloadOne(row)),
-        tip(SearchOutline, '详情', () => openDetail(row)),
-        tip(LinkOutline, '链接', () => openPresign(row)),
-        tip(CreateOutline, 'RE名称', () => openRename(row)),
-        tip(TrashOutline, '删除', () => {
+        tip(DownloadOutline, t('common.download'), () => downloadOne(row)),
+        tip(SearchOutline, t('common.detail'), () => openDetail(row)),
+        tip(LinkOutline, t('common.link'), () => openPresign(row)),
+        tip(CreateOutline, t('common.rename'), () => openRename(row)),
+        tip(TrashOutline, t('common.delete'), () => {
           dialog.warning({
             title: '删除',
             content: 'CONFIRM_删除',
-            positiveText: '删除',
-            negativeText: '取消',
+            positiveText: t('common.delete'),
+            negativeText: t('common.cancel'),
             onPositiveClick: () => removeItems([row]),
           })
         }, true),
@@ -162,7 +166,8 @@ const columns = computed<DataTableColumns<ObjectItem & { _rowKey: string }>>(() 
       return h('div', { class: 'acts' }, acts)
     },
   },
-])
+]
+})
 
 function onOpen(row: ObjectItem) {
   if (row.isDir) store.enterDir(row.key).catch((e) => message.error(e.message))
@@ -173,7 +178,7 @@ function openPreview(row: ObjectItem) {
   if (!store.currentBucket) return
   previewName.value = row.name
   previewKey.value = row.key
-  previewError.value = ''
+  previewError.value = t('browser.imageLoadFailed')
   previewLoading.value = true
   // cache-bust so re-open after overwrite still refreshes
   previewSrc.value = api.previewUrl(store.currentBucket, row.key) + '&t=' + Date.now()
@@ -185,12 +190,12 @@ function onPreviewLoad() {
 }
 function onPreviewError() {
   previewLoading.value = false
-  previewError.value = '图片加载失败'
+  previewError.value = t('browser.imageLoadFailed')
 }
 function closePreview() {
   showPreview.value = false
   previewSrc.value = ''
-  previewError.value = ''
+  previewError.value = t('browser.imageLoadFailed')
 }
 function openPreviewInTab() {
   if (previewSrc.value) window.open(previewSrc.value, '_blank')
@@ -205,11 +210,11 @@ async function onBucketChange(name: string) {
 }
 async function createFolder() {
   const name = folderName.value.trim().replace(/^\/+|\/+$/g, '')
-  if (!name) return message.warning('请输入文件夹名')
+  if (!name) return message.warning(t('browser.pleaseFolder'))
   try {
     await api.createFolder(store.currentBucket, store.prefix + name + '/')
     showFolder.value = false; folderName.value = ''
-    message.success('已创建'); await store.loadObjects()
+    message.success(t('common.created')); await store.loadObjects()
   } catch (e: any) { message.error(e.message) }
 }
 async function createBucket() {
@@ -218,7 +223,7 @@ async function createBucket() {
   try {
     await api.createBucket(name)
     showBucket.value = false; bucketName.value = ''
-    message.success('已创建'); await store.loadBuckets(); await store.selectBucket(name)
+    message.success(t('common.created')); await store.loadBuckets(); await store.selectBucket(name)
   } catch (e: any) { message.error(e.message) }
 }
 async function deleteBucket() {
@@ -226,11 +231,11 @@ async function deleteBucket() {
   dialog.warning({
     title: '删桶ITLE_T',
     content: '确认删除空桶？ ' + store.currentBucket,
-    positiveText: '删除', negativeText: '取消',
+    positiveText: t('common.delete'), negativeText: t('common.cancel'),
     onPositiveClick: async () => {
       try {
         await api.deleteBucket(store.currentBucket)
-        message.success('已删除'); store.currentBucket = ''
+        message.success(t('common.deleted')); store.currentBucket = ''
         await store.loadBuckets()
         if (store.currentBucket) await store.loadObjects()
       } catch (e: any) { message.error(e.message) }
@@ -247,15 +252,15 @@ async function removeItems(items: ObjectItem[]) {
     await api.deleteObjects(store.currentBucket,
       items.filter((i) => !i.isDir).map((i) => i.key),
       items.filter((i) => i.isDir).map((i) => i.key))
-    message.success('已删除'); await store.loadObjects()
+    message.success(t('common.deleted')); await store.loadObjects()
   } catch (e: any) { message.error(e.message) }
 }
 function removeSelected() {
   const items = selectedItems()
-  if (!items.length) return message.warning('请先选择')
+  if (!items.length) return message.warning(t('common.pleaseSelect'))
   dialog.warning({
     title: '删除', content: '删除选中项？ (' + items.length + ')',
-    positiveText: '删除', negativeText: '取消',
+    positiveText: t('common.delete'), negativeText: t('common.cancel'),
     onPositiveClick: () => removeItems(items),
   })
 }
@@ -267,7 +272,7 @@ function downloadOne(row: ObjectItem) {
 }
 function downloadSelected() {
   const files = selectedItems().filter((i) => !i.isDir)
-  if (!files.length) return message.warning('请选择文件')
+  if (!files.length) return message.warning(t('common.pleaseFile'))
   files.forEach((f, i) => setTimeout(() => downloadOne(f), i * 180))
 }
 function openRename(row: ObjectItem) {
@@ -275,12 +280,12 @@ function openRename(row: ObjectItem) {
 }
 async function doRename() {
   const name = renameValue.value.trim()
-  if (!name) return message.warning('名称不能为空')
+  if (!name) return message.warning(t('common.nameEmpty'))
   const parent = renameSrc.value.includes('/')
     ? renameSrc.value.slice(0, renameSrc.value.lastIndexOf('/') + 1) : ''
   try {
     await api.renameObject(store.currentBucket, renameSrc.value, parent + name)
-    showRename.value = false; message.success('已重命名'); await store.loadObjects()
+    showRename.value = false; message.success(t('common.renamed')); await store.loadObjects()
   } catch (e: any) { message.error(e.message) }
 }
 async function openDetail(row: ObjectItem) {
@@ -296,7 +301,7 @@ async function openPresign(row: ObjectItem) {
   } catch (e: any) { message.error(e.message) }
 }
 async function copyPresign() {
-  try { await navigator.clipboard.writeText(presignUrl.value); message.success('已复制') }
+  try { await navigator.clipboard.writeText(presignUrl.value); message.success(t('common.copied')) }
   catch { message.info(presignUrl.value) }
 }
 async function uploadFiles(fileList: UploadFileInfo[]) {
@@ -337,7 +342,7 @@ function parentPrefix() {
   >
     <header class="titlebar">
       <div class="title-left">
-        <h1>文件</h1>
+        <h1>{{ t('browser.title') }}</h1>
         <div class="crumbs">
           <button type="button" class="crumb pressable" @click="store.goPrefix('').catch((e)=>message.error(e.message))">
             <NIcon :component="HomeOutline" :size="13" />
@@ -348,7 +353,7 @@ function parentPrefix() {
               type="button"
               class="crumb text pressable"
               @click="idx===0 ? store.goPrefix('').catch((e)=>message.error(e.message)) : store.goPrefix(c.prefix).catch((e)=>message.error(e.message))"
-            >{{ c.label || '根目录' }}</button>
+            >{{ c.label || t('common.root') }}</button>
           </template>
           <NTag v-if="store.activeProfile" size="tiny" :bordered="false" round class="pill">{{ store.activeProfile.name }}</NTag>
         </div>
@@ -366,7 +371,7 @@ function parentPrefix() {
         />
         <NButton size="small" secondary class="pressable" @click="showBucket = true">
           <template #icon><NIcon :component="AddOutline" :size="14" /></template>
-          新建桶
+          {{ t('browser.newBucket') }}
         </NButton>
         <NButton size="small" quaternary circle class="pressable" @click="refreshAll">
           <template #icon><NIcon :component="RefreshOutline" :size="15" /></template>
@@ -375,9 +380,9 @@ function parentPrefix() {
     </header>
 
     <section v-if="!store.activeProfile" class="empty">
-      <NEmpty description="还没有激活的连接">
+      <NEmpty :description="t('browser.noConnection')">
         <template #extra>
-          <NButton type="primary" size="small" @click="$router.push('/profiles')">去配置</NButton>
+          <NButton type="primary" size="small" @click="$router.push('/profiles')">{{ t('browser.goSetup') }}</NButton>
         </template>
       </NEmpty>
     </section>
@@ -391,7 +396,7 @@ function parentPrefix() {
           <div class="vdiv" />
           <NButton size="small" type="primary" :disabled="!store.currentBucket" class="pressable" @click="showFolder = true">
             <template #icon><NIcon :component="FolderOutline" :size="14" /></template>
-            新建文件夹
+            {{ t('browser.newFolder') }}
           </NButton>
           <NUpload :show-file-list="false" multiple :default-upload="false" :disabled="!store.currentBucket || uploading" @change="({ fileList }) => uploadFiles(fileList)">
             <NButton size="small" secondary :disabled="!store.currentBucket || uploading" class="pressable">
@@ -401,22 +406,22 @@ function parentPrefix() {
           </NUpload>
           <NButton size="small" secondary :disabled="!store.selectedKeys.length" class="pressable" @click="downloadSelected">
             <template #icon><NIcon :component="DownloadOutline" :size="14" /></template>
-            下载
+            {{ t('common.download') }}
           </NButton>
           <NButton size="small" secondary type="error" :disabled="!store.selectedKeys.length" class="pressable" @click="removeSelected">
             <template #icon><NIcon :component="TrashOutline" :size="14" /></template>
-            删除
+            {{ t('common.delete') }}
           </NButton>
-          <NButton v-if="store.currentBucket" size="small" quaternary type="error" class="pressable" @click="deleteBucket">删桶</NButton>
+          <NButton v-if="store.currentBucket" size="small" quaternary type="error" class="pressable" @click="deleteBucket">{{ t('browser.deleteBucket') }}</NButton>
         </div>
-        <NInput v-model:value="store.search" size="small" clearable placeholder="搜索" style="width: 200px">
+        <NInput v-model:value="store.search" size="small" clearable :placeholder="t('browser.searchPlaceholder')" style="width: 200px">
           <template #prefix><NIcon :component="SearchOutline" :size="14" :depth="3" /></template>
         </NInput>
       </div>
 
       <div v-if="uploading" class="upload">
         <div class="upload-row">
-          <span>上传中</span>
+          <span>{{ t('browser.uploading') }}</span>
           <span class="mono muted">{{ uploadName }}</span>
         </div>
         <NProgress type="line" :percentage="uploadPct" :show-indicator="false" :height="4" processing />
@@ -437,14 +442,14 @@ function parentPrefix() {
         />
         <div v-if="!rows.length && !store.loadingObjects" class="blank">
           <div class="blank-icon"><NIcon :component="CloudUploadOutline" :size="22" /></div>
-          <div class="blank-title">此位置为空</div>
-          <div class="blank-sub">拖拽文件到此处，或点击上传</div>
+          <div class="blank-title">{{ t('browser.emptyTitle') }}</div>
+          <div class="blank-sub">{{ t('browser.emptySub') }}</div>
         </div>
       </div>
 
       <footer class="statusbar">
-        <span>{{ store.filteredDirs.length }} 个文件夹， {{ store.filteredObjects.length }} 个文件</span>
-        <NButton v-if="store.isTruncated" text type="primary" size="tiny" :loading="store.loadingObjects" @click="store.loadObjects(true)">加载更多</NButton>
+        <span>{{ store.filteredDirs.length }} {{ t('browser.folderUnit') }} {{ store.filteredObjects.length }} {{ t('browser.fileUnit') }}</span>
+        <NButton v-if="store.isTruncated" text type="primary" size="tiny" :loading="store.loadingObjects" @click="store.loadObjects(true)">{{ t('browser.loadMore') }}</NButton>
       </footer>
     </template>
 
@@ -473,28 +478,28 @@ function parentPrefix() {
       </div>
       <template #footer>
         <NSpace justify="end">
-          <NButton size="small" @click="openPreviewInTab">新窗口打开</NButton>
-          <NButton size="small" secondary @click="downloadOne({ key: previewKey, name: previewName, size: 0, isDir: false })">下载</NButton>
-          <NButton size="small" type="primary" @click="showPreview = false">关闭</NButton>
+          <NButton size="small" @click="openPreviewInTab">{{ t('browser.openInNewTab') }}</NButton>
+          <NButton size="small" secondary @click="downloadOne({ key: previewKey, name: previewName, size: 0, isDir: false })">{{ t('common.download') }}</NButton>
+          <NButton size="small" type="primary" @click="showPreview = false">{{ t('common.close') }}</NButton>
         </NSpace>
       </template>
     </NModal>
 
-    <NModal v-model:show="showFolder" preset="card" title="新建文件夹" style="width: 380px" :bordered="false">
+    <NModal v-model:show="showFolder" preset="card" :title="t('browser.newFolder')" style="width: 380px" :bordered="false">
       <NInput v-model:value="folderName" placeholder="FOLDER_名称" autofocus @keyup.enter="createFolder" />
       <template #footer>
         <NSpace justify="end">
-          <NButton size="small" @click="showFolder=false">取消</NButton>
-          <NButton size="small" type="primary" @click="createFolder">创建</NButton>
+          <NButton size="small" @click="showFolder=false">{{ t('common.cancel') }}</NButton>
+          <NButton size="small" type="primary" @click="createFolder">{{ t('common.create') }}</NButton>
         </NSpace>
       </template>
     </NModal>
-    <NModal v-model:show="showBucket" preset="card" title="新建桶" style="width: 380px" :bordered="false">
+    <NModal v-model:show="showBucket" preset="card" :title="t('browser.newBucket')" style="width: 380px" :bordered="false">
       <NInput v-model:value="bucketName" placeholder="my-bucket" @keyup.enter="createBucket" />
       <template #footer>
         <NSpace justify="end">
-          <NButton size="small" @click="showBucket=false">取消</NButton>
-          <NButton size="small" type="primary" @click="createBucket">创建</NButton>
+          <NButton size="small" @click="showBucket=false">{{ t('common.cancel') }}</NButton>
+          <NButton size="small" type="primary" @click="createBucket">{{ t('common.create') }}</NButton>
         </NSpace>
       </template>
     </NModal>
@@ -502,13 +507,13 @@ function parentPrefix() {
       <NInput v-model:value="renameValue" @keyup.enter="doRename" />
       <template #footer>
         <NSpace justify="end">
-          <NButton size="small" @click="showRename=false">取消</NButton>
-          <NButton size="small" type="primary" @click="doRename">保存</NButton>
+          <NButton size="small" @click="showRename=false">{{ t('common.cancel') }}</NButton>
+          <NButton size="small" type="primary" @click="doRename">{{ t('common.save') }}</NButton>
         </NSpace>
       </template>
     </NModal>
-    <NModal v-model:show="showDetail" preset="card" title="详情" style="width: 480px" :bordered="false">
-      <div v-if="detailLoading" class="muted">加载中…</div>
+    <NModal v-model:show="showDetail" preset="card" :title="t('common.detail')" style="width: 480px" :bordered="false">
+      <div v-if="detailLoading" class="muted">{{ t('common.loading') }}</div>
       <div v-else-if="detail" class="detail">
         <div v-for="r in [
           ['Key', detail.key], ['Size', formatBytes(detail.size)], ['Type', detail.contentType || '\u2014'],
@@ -518,14 +523,14 @@ function parentPrefix() {
         </div>
       </div>
     </NModal>
-    <NModal v-model:show="showPresign" preset="card" title="预签名链接" style="width: 560px" :bordered="false">
+    <NModal v-model:show="showPresign" preset="card" :title="t('browser.presignTitle')" style="width: 560px" :bordered="false">
       <NInput v-model:value="presignUrl" type="textarea" :rows="3" readonly />
       <template #footer>
         <NSpace justify="end">
-          <NButton size="small" @click="showPresign=false">关闭</NButton>
+          <NButton size="small" @click="showPresign=false">{{ t('common.close') }}</NButton>
           <NButton size="small" type="primary" @click="copyPresign">
             <template #icon><NIcon :component="CopyOutline" /></template>
-            复制
+            {{ t('common.copy') }}
           </NButton>
         </NSpace>
       </template>

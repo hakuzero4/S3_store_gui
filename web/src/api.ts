@@ -9,7 +9,7 @@ const http = axios.create({
 http.interceptors.response.use(
   (r) => r,
   (err) => {
-    const msg = err?.response?.data?.error || err.message || '请求失败'
+    const msg = err?.response?.data?.error || err.message || 'Request failed'
     return Promise.reject(new Error(msg))
   },
 )
@@ -106,6 +106,22 @@ export function formatTime(iso?: string): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
+export function providerKey(p?: string): string {
+  switch (p) {
+    case 'r2':
+      return 'provider.r2'
+    case 'aws':
+      return 'provider.aws'
+    case 'oss':
+      return 'provider.oss'
+    case 'minio':
+      return 'provider.minio'
+    default:
+      return 'provider.other'
+  }
+}
+
+/** @deprecated prefer providerKey + i18n */
 export function providerLabel(p?: string) {
   switch (p) {
     case 'r2':

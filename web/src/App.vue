@@ -1,13 +1,40 @@
-<script setup lang="ts">
-import { onMounted } from 'vue'
+﻿<script setup lang="ts">
+import { computed, onMounted, watch } from 'vue'
 import {
   NConfigProvider, NMessageProvider, NDialogProvider, NNotificationProvider,
-  NLoadingBarProvider, type GlobalThemeOverrides, zhCN, dateZhCN,
+  NLoadingBarProvider, type GlobalThemeOverrides,
+  enUS, zhCN, zhTW, jaJP, koKR, dateEnUS, dateZhCN, dateZhTW, dateJaJP, dateKoKR,
 } from 'naive-ui'
+import { useI18n } from 'vue-i18n'
 import AppLayout from './components/AppLayout.vue'
 import { useAppStore } from './stores/app'
+import type { AppLocale } from './i18n'
 
 const store = useAppStore()
+const { locale } = useI18n()
+
+const naiveLocale = computed(() => {
+  switch (locale.value as AppLocale) {
+    case 'zh-CN': return zhCN
+    case 'zh-TW': return zhTW
+    case 'ja': return jaJP
+    case 'ko': return koKR
+    default: return enUS
+  }
+})
+const naiveDateLocale = computed(() => {
+  switch (locale.value as AppLocale) {
+    case 'zh-CN': return dateZhCN
+    case 'zh-TW': return dateZhTW
+    case 'ja': return dateJaJP
+    case 'ko': return dateKoKR
+    default: return dateEnUS
+  }
+})
+
+watch(locale, (code) => {
+  document.documentElement.lang = code
+}, { immediate: true })
 
 const themeOverrides: GlobalThemeOverrides = {
   common: {
@@ -116,7 +143,7 @@ const themeOverrides: GlobalThemeOverrides = {
     thFontWeight: '500',
     fontSizeMedium: '13px',
     thPaddingMedium: '8px 12px',
-    tdPaddingMedium: '7px 12px',
+    tdPaddingMedium: '0 12px',
     borderRadius: '0',
   },
   Tag: {
@@ -157,7 +184,12 @@ onMounted(async () => {
 </script>
 
 <template>
-  <NConfigProvider class="app-root" :theme-overrides="themeOverrides" :locale="zhCN" :date-locale="dateZhCN">
+  <NConfigProvider
+    class="app-root"
+    :theme-overrides="themeOverrides"
+    :locale="naiveLocale"
+    :date-locale="naiveDateLocale"
+  >
     <NLoadingBarProvider>
       <NDialogProvider>
         <NNotificationProvider placement="top-right">
