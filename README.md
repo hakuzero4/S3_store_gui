@@ -24,12 +24,15 @@ Manage **Cloudflare R2**, **AWS S3**, **MinIO**, and other S3 API endpoints from
 
 ## Features
 
-- Multiple connection profiles (R2 / S3 / MinIO / custom)
-- Bucket list / create / delete; switch buckets per profile
+- Multiple connection profiles (R2 / S3 / MinIO / custom) with quick sidebar switcher
+- Bucket list / create / delete; multiple buckets per profile
 - Object browser with prefixes, search, breadcrumbs
-- Upload (button + drag-drop), download, bulk delete, rename
-- Folder placeholders, object details, presigned URLs
-- In-app image preview
+- Upload (button + drag-drop, retry, multipart for larger files), download, bulk delete, rename
+- Batch copy / move across prefixes and buckets
+- ZIP download for selection; folder create; object details; presigned URLs
+- In-app image preview and text/code preview
+- Local disk cache for previews/downloads (temp dir, ETag / LastModified validated)
+- Profile import / export
 - **i18n:** English (default), Simplified Chinese, Traditional Chinese, Japanese, Korean
 
 ---
@@ -44,7 +47,7 @@ cd S3_store_gui
 docker compose up -d --build
 ```
 
-Open http://127.0.0.1:17890 ? config volume: `/data/config.json`.
+Open http://127.0.0.1:17890 — config volume: `/data/config.json`.
 
 ```bash
 # plain docker
@@ -260,8 +263,9 @@ docker pull ghcr.io/hakuzero4/s3_store_gui:0.2.0
 
 ## Roadmap / ideas
 
-- [ ] Multipart upload for large files
-- [ ] Object copy across prefixes / buckets
+- [x] Multipart upload for large files
+- [x] Object copy / move across prefixes / buckets
+- [x] ZIP download, text preview, local object cache
 - [ ] Dark mode toggle
 - [ ] Optional basic auth for Docker deployments
 
@@ -275,6 +279,6 @@ See [CHANGELOG.md](./CHANGELOG.md).
 
 ## License
 
-MIT ? see [LICENSE](./LICENSE).
+MIT — see [LICENSE](./LICENSE).
 
 Repository: https://github.com/hakuzero4/S3_store_gui
