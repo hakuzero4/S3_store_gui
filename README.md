@@ -67,7 +67,7 @@ docker run -d --name s3store \
 ```bash
 cd web && npm ci && npm run build && cd ..
 rm -rf internal/static/dist && cp -R web/dist internal/static/dist
-CGO_ENABLED=0 go build -trimpath -ldflags "-s -w -X main.version=0.1.0" -o dist/s3store ./cmd/s3store
+CGO_ENABLED=0 go build -trimpath -ldflags "-s -w -X main.version=0.2.0" -o dist/s3store ./cmd/s3store
 ./dist/s3store -no-browser
 ```
 
@@ -209,30 +209,30 @@ docker-compose.yml
 | Workflow | Trigger | What it does |
 |----------|---------|----------------|
 | `CI` | push/PR to `main` | Build frontend + Go binary + Docker smoke build |
-| `Release` | tag `v*` (e.g. `v0.1.0`) | Multi-platform binaries + GitHub Release assets |
+| `Release` | tag `v*` (e.g. `v0.2.0`) | Multi-platform binaries + GitHub Release assets |
 | `Docker` | push `main` / tag `v*` | Multi-arch image to GHCR |
 
 ### Publish a release
 
 ```bash
-git tag v0.1.0
-git push origin v0.1.0
+git tag v0.2.0
+git push origin v0.2.0
 ```
 
 Release assets (examples):
 
-- `s3store_v0.1.0_windows_amd64.exe`
-- `s3store_v0.1.0_linux_amd64`
-- `s3store_v0.1.0_linux_arm64`
-- `s3store_v0.1.0_darwin_amd64`
-- `s3store_v0.1.0_darwin_arm64`
+- `s3store_v0.2.0_windows_amd64.exe`
+- `s3store_v0.2.0_linux_amd64`
+- `s3store_v0.2.0_linux_arm64`
+- `s3store_v0.2.0_darwin_amd64`
+- `s3store_v0.2.0_darwin_arm64`
 - `checksums.txt`
 
 ### Docker image (GHCR)
 
 ```bash
 docker pull ghcr.io/hakuzero4/s3_store_gui:latest
-docker pull ghcr.io/hakuzero4/s3_store_gui:0.1.0
+docker pull ghcr.io/hakuzero4/s3_store_gui:0.2.0
 ```
 
 > First time: GitHub Packages may require making the package public, or `docker login ghcr.io`.

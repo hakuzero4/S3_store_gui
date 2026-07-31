@@ -66,7 +66,7 @@ docker run -d --name s3store \
 ```bash
 cd web && npm ci && npm run build && cd ..
 rm -rf internal/static/dist && cp -R web/dist internal/static/dist
-CGO_ENABLED=0 go build -trimpath -ldflags "-s -w -X main.version=0.1.0" -o dist/s3store ./cmd/s3store
+CGO_ENABLED=0 go build -trimpath -ldflags "-s -w -X main.version=0.2.0" -o dist/s3store ./cmd/s3store
 ./dist/s3store -no-browser
 ```
 
@@ -203,23 +203,23 @@ docker-compose.yml
 | Workflow | 트리거 | 내용 |
 |----------|---------|------|
 | `CI` | `main` push/PR | 프론트+Go+Docker 스모크 |
-| `Release` | tag `v*` (예: `v0.1.0`) | 다중 플랫폼 바이너리 + GitHub Release |
+| `Release` | tag `v*` (예: `v0.2.0`) | 다중 플랫폼 바이너리 + GitHub Release |
 | `Docker` | `main` / tag `v*` | 다중 아키 이미지 → GHCR |
 
 ### 릴리스 공개
 
 ```bash
-git tag v0.1.0
-git push origin v0.1.0
+git tag v0.2.0
+git push origin v0.2.0
 ```
 
-예: `s3store_v0.1.0_windows_amd64.exe`, `linux_amd64/arm64`, `darwin_amd64/arm64`, `checksums.txt`
+예: `s3store_v0.2.0_windows_amd64.exe`, `linux_amd64/arm64`, `darwin_amd64/arm64`, `checksums.txt`
 
 ### Docker (GHCR)
 
 ```bash
 docker pull ghcr.io/hakuzero4/s3_store_gui:latest
-docker pull ghcr.io/hakuzero4/s3_store_gui:0.1.0
+docker pull ghcr.io/hakuzero4/s3_store_gui:0.2.0
 ```
 
 ---

@@ -19,7 +19,7 @@ import (
 	"github.com/hakup/s3store/internal/static"
 )
 
-var version = "0.1.0"
+var version = "0.2.0"
 
 func main() {
 	addr := flag.String("addr", "", "listen address (default from config / env S3STORE_ADDR)")

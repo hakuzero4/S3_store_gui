@@ -66,7 +66,7 @@ docker run -d --name s3store \
 ```bash
 cd web && npm ci && npm run build && cd ..
 rm -rf internal/static/dist && cp -R web/dist internal/static/dist
-CGO_ENABLED=0 go build -trimpath -ldflags "-s -w -X main.version=0.1.0" -o dist/s3store ./cmd/s3store
+CGO_ENABLED=0 go build -trimpath -ldflags "-s -w -X main.version=0.2.0" -o dist/s3store ./cmd/s3store
 ./dist/s3store -no-browser
 ```
 
@@ -203,23 +203,23 @@ docker-compose.yml
 | Workflow | 觸發 | 作用 |
 |----------|------|------|
 | `CI` | push/PR 到 `main` | 建前端 + Go + Docker 冒煙 |
-| `Release` | tag `v*`（如 `v0.1.0`） | 多平台執行檔 + GitHub Release |
+| `Release` | tag `v*`（如 `v0.2.0`） | 多平台執行檔 + GitHub Release |
 | `Docker` | push `main` / tag `v*` | 多架構映像推到 GHCR |
 
 ### 發佈 Release
 
 ```bash
-git tag v0.1.0
-git push origin v0.1.0
+git tag v0.2.0
+git push origin v0.2.0
 ```
 
-產物示例：`s3store_v0.1.0_windows_amd64.exe`、`linux_amd64/arm64`、`darwin_amd64/arm64`、`checksums.txt`
+產物示例：`s3store_v0.2.0_windows_amd64.exe`、`linux_amd64/arm64`、`darwin_amd64/arm64`、`checksums.txt`
 
 ### Docker 映像（GHCR）
 
 ```bash
 docker pull ghcr.io/hakuzero4/s3_store_gui:latest
-docker pull ghcr.io/hakuzero4/s3_store_gui:0.1.0
+docker pull ghcr.io/hakuzero4/s3_store_gui:0.2.0
 ```
 
 ---

@@ -7,23 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-07-31
+
 ### Added
-- Local disk cache for object previews/downloads (temp dir, ETag/LastModified validated)
-- Sidebar connection source dropdown
-- Copy/Move across prefixes and buckets
+- Local disk cache for object previews/downloads (OS temp dir; validated by ETag / LastModified)
+- Cache stats API (`GET /api/cache/stats`) and clear API (`DELETE /api/cache`)
+- Sidebar connection source dropdown for quick profile switching
+- Copy/Move across prefixes and buckets (batch)
 - ZIP download for selection
 - Text/code preview
 - Upload retry
 - Profile import/export
 - Multipart upload for larger files
 
+### Fixed
+- Image preview modal always showing load failure (error state set before load)
+- Table icon/text alignment and full-height layout polish
+
 ### Changed
 - Compact sidebar footer for connection + language
+- Preview URLs versioned by ETag/LastModified for better browser caching
 
 ## [0.1.0] - 2026-07-31
 
 ### Added
-- Initial public release of **S3 Store** ? self-hosted S3-compatible object storage console
+- Initial public release of **S3 Store** — self-hosted S3-compatible object storage console
 - Vue 3 + Naive UI frontend embedded in a single Go binary (`go:embed`)
 - Multi-profile connections for Cloudflare R2, AWS S3, MinIO, and custom S3 endpoints
 - Bucket list / create / delete; object browse with prefixes, search, breadcrumbs
@@ -44,4 +52,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Prefer least-privilege R2/S3 API tokens
 
 [Unreleased]: https://github.com/hakuzero4/S3_store_gui/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/hakuzero4/S3_store_gui/releases/tag/v0.1.0
+
+[Unreleased]: https://github.com/hakuzero4/S3_store_gui/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/hakuzero4/S3_store_gui/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/hakuzero4/S3_store_gui/releases/tag/v0.1.0
