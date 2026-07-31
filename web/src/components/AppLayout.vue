@@ -1,42 +1,68 @@
 ﻿<script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { NIcon, NSelect } from 'naive-ui'
+import { NIcon, NSelect, useMessage } from 'naive-ui'
 import { CloudOutline, FolderOpenOutline, SettingsOutline } from '@vicons/ionicons5'
+import { api } from '../api'
 import { useAppStore } from '../stores/app'
-import { providerKey } from '../api'
 import { SUPPORT_LOCALES, setStoredLocale, type AppLocale } from '../i18n'
 
 const store = useAppStore()
 const route = useRoute()
 const router = useRouter()
+const message = useMessage()
 const { t, locale } = useI18n()
+const switching = ref(false)
 
 const nav = computed(() => [
   { name: 'browser', label: t('app.navFiles'), icon: FolderOpenOutline, path: '/' },
   { name: 'profiles', label: t('app.navConnections'), icon: SettingsOutline, path: '/profiles' },
 ])
 
-const statusText = computed(() => store.activeProfile?.name || t('app.notConnected'))
-const providerText = computed(() =>
-  store.activeProfile ? t(providerKey(store.activeProfile.provider)) : '',
-)
-
 const langOptions = SUPPORT_LOCALES.map((l) => ({ label: l.label, value: l.code }))
+
+const profileOptions = computed(() => {
+  if (!store.profiles.length) {
+    return [{ label: t('app.noProfiles'), value: '', disabled: true }]
+  }
+  return store.profiles.map((p) => ({
+    label: p.name,
+    value: p.id,
+  }))
+})
 
 function onLocaleChange(code: AppLocale) {
   locale.value = code
   setStoredLocale(code)
 }
+
+async function onProfileChange(id: string) {
+  if (!id || id === store.activeId || switching.value) return
+  switching.value = true
+  try {
+    await api.activateProfile(id)
+    await store.loadProfiles()
+    store.currentBucket = ''
+    store.prefix = ''
+    await store.loadBuckets()
+    if (store.currentBucket) await store.loadObjects()
+    const name = store.profiles.find((p) => p.id === id)?.name || id
+    message.success(t('app.switchOk', { name }))
+  } catch (e: any) {
+    message.error(e.message)
+  } finally {
+    switching.value = false
+  }
+}
 </script>
 
 <template>
   <div class="app-shell">
-    <aside class="side">
+    <aside class="side" data-ui-rev="20260731c">
       <div class="brand">
         <div class="logo"><NIcon :component="CloudOutline" :size="15" /></div>
-        <div>
+        <div class="brand-text">
           <div class="brand-title">{{ t('app.name') }}</div>
           <div class="brand-sub">{{ t('app.tagline') }}</div>
         </div>
@@ -56,11 +82,33 @@ function onLocaleChange(code: AppLocale) {
         </button>
       </nav>
 
-      <div class="side-bottom">
-        <div class="lang-row">
-          <div class="conn-kicker">{{ t('app.language') }}</div>
+      <div class="side-foot">
+        <div class="foot-block">
+          <div class="foot-label">
+            <span>{{ t('app.switchConnection') }}</span>
+            <button type="button" class="text-btn" @click="router.push('/profiles')">
+              {{ store.profiles.length ? t('app.manageConnections') : t('app.addConnection') }}
+            </button>
+          </div>
           <NSelect
-            size="tiny"
+            size="small"
+            :value="store.activeId || null"
+            :options="profileOptions"
+            :loading="switching"
+            :placeholder="t('app.notConnected')"
+            :disabled="!store.profiles.length || switching"
+            :consistent-menu-width="false"
+            style="width: 100%"
+            @update:value="onProfileChange"
+          />
+        </div>
+
+        <div class="foot-block">
+          <div class="foot-label">
+            <span>{{ t('app.language') }}</span>
+          </div>
+          <NSelect
+            size="small"
             :value="locale"
             :options="langOptions"
             :consistent-menu-width="false"
@@ -68,12 +116,6 @@ function onLocaleChange(code: AppLocale) {
             @update:value="onLocaleChange"
           />
         </div>
-        <div class="conn-kicker" style="margin-top: 12px">{{ t('app.currentConnection') }}</div>
-        <div class="conn-name truncate">{{ statusText }}</div>
-        <div v-if="store.activeProfile" class="conn-provider">{{ providerText }}</div>
-        <button v-else type="button" class="conn-link pressable" @click="router.push('/profiles')">
-          {{ t('app.addConnection') }}
-        </button>
       </div>
     </aside>
 
@@ -85,21 +127,25 @@ function onLocaleChange(code: AppLocale) {
 
 <style scoped>
 .side {
-  background: var(--sidebar);
-  border-right: 1px solid var(--line);
+  background: #f5f5f7;
+  border-right: 1px solid #e5e5ea;
   display: flex;
   flex-direction: column;
   min-height: 0;
   height: 100%;
   overflow: hidden;
-  padding: 14px 10px 12px;
+  padding: 16px 12px 14px;
+  width: 220px;
+  box-sizing: border-box;
 }
+
 .brand {
   display: flex;
   gap: 10px;
   align-items: center;
-  padding: 2px 8px 14px;
+  padding: 0 4px 16px;
 }
+
 .logo {
   width: 28px;
   height: 28px;
@@ -107,25 +153,34 @@ function onLocaleChange(code: AppLocale) {
   display: grid;
   place-items: center;
   color: #fff;
-  background: linear-gradient(180deg, #5ac8fa, #007aff);
-  box-shadow: inset 0 0.5px 0 rgba(255,255,255,0.35);
+  background: linear-gradient(180deg, #64b5ff, #007aff);
+  box-shadow: inset 0 0.5px 0 rgba(255, 255, 255, 0.35);
+  flex-shrink: 0;
 }
+
 .brand-title {
   font-size: 13px;
   font-weight: 650;
-  letter-spacing: -0.01em;
-  line-height: 1.15;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  color: #1d1d1f;
 }
+
 .brand-sub {
   font-size: 11px;
-  color: var(--tertiary);
+  color: #8e8e93;
   margin-top: 1px;
+  letter-spacing: 0;
 }
+
 .nav {
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 2px;
+  flex: 1 1 auto;
+  min-height: 0;
 }
+
 .nav-item {
   appearance: none;
   border: 0;
@@ -135,58 +190,85 @@ function onLocaleChange(code: AppLocale) {
   gap: 9px;
   width: 100%;
   text-align: left;
-  padding: 7px 10px;
-  border-radius: 7px;
-  color: var(--label);
+  padding: 8px 10px;
+  border-radius: 8px;
+  color: #1d1d1f;
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
+  transition: background 0.12s ease;
 }
-.nav-item:hover { background: var(--sidebar-hover); }
+
+.nav-item:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
 .nav-item.active {
-  background: var(--sidebar-active);
+  background: #e8e8ed;
   font-weight: 600;
-  color: var(--label);
 }
-.nav-item.active :deep(svg) { color: var(--blue); }
-.side-bottom {
+
+.nav-item.active :deep(svg) {
+  color: #007aff;
+}
+
+/* footer controls — compact, no floating card */
+.side-foot {
   margin-top: auto;
-  padding: 12px 10px 4px;
-  border-top: 1px solid var(--line);
+  padding-top: 12px;
+  border-top: 1px solid #e5e5ea;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
-.lang-row { margin-bottom: 4px; }
-.conn-kicker {
+
+.foot-block {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.foot-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   font-size: 11px;
-  color: var(--tertiary);
-  margin-bottom: 4px;
+  font-weight: 500;
+  color: #8e8e93;
+  padding: 0 2px;
+  letter-spacing: 0.01em;
 }
-.conn-name {
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-}
-.conn-provider {
-  margin-top: 3px;
-  font-size: 11px;
-  color: var(--secondary);
-}
-.conn-link {
-  margin-top: 6px;
+
+.text-btn {
+  appearance: none;
   border: 0;
   background: transparent;
-  color: var(--blue);
-  font-size: 12px;
-  font-weight: 510;
+  color: #007aff;
+  font-size: 11px;
+  font-weight: 500;
   padding: 0;
   cursor: pointer;
+  white-space: nowrap;
 }
+
+.text-btn:hover {
+  text-decoration: underline;
+}
+
+.foot-block :deep(.n-base-selection) {
+  --n-height: 30px !important;
+  --n-border-radius: 8px !important;
+  --n-font-size: 12px !important;
+}
+
 .main {
   min-width: 0;
   min-height: 0;
   height: 100%;
   display: flex;
   flex-direction: column;
-  background: var(--canvas);
+  background: #fff;
   overflow: hidden;
 }
 </style>

@@ -7,7 +7,12 @@
     "currentConnection": "Current connection",
     "notConnected": "Not connected",
     "addConnection": "Add connection…",
-    "language": "Language"
+    "language": "Language",
+    "switchConnection": "Connection",
+    "switching": "Switching?",
+    "switchOk": "Switched to {name}",
+    "manageConnections": "Manage?",
+    "noProfiles": "No profiles"
   },
   "provider": {
     "r2": "Cloudflare R2",

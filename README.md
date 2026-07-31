@@ -269,6 +269,10 @@ Contributions and issues are welcome.
 
 ---
 
+## Changelog
+
+See [CHANGELOG.md](./CHANGELOG.md).
+
 ## License
 
 MIT ? see [LICENSE](./LICENSE).

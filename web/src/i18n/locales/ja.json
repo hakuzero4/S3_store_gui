@@ -7,7 +7,12 @@
     "currentConnection": "現在の接続",
     "notConnected": "未接続",
     "addConnection": "接続を追加…",
-    "language": "言語"
+    "language": "言語",
+    "switchConnection": "接続先",
+    "switching": "切り替え中…",
+    "switchOk": "{name} に切り替えました",
+    "manageConnections": "管理…",
+    "noProfiles": "プロファイルなし"
   },
   "provider": {
     "r2": "Cloudflare R2",

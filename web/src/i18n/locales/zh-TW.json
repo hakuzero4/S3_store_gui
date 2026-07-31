@@ -7,7 +7,12 @@
     "currentConnection": "目前連線",
     "notConnected": "未連線",
     "addConnection": "新增連線…",
-    "language": "語言"
+    "language": "語言",
+    "switchConnection": "連線源",
+    "switching": "切換中…",
+    "switchOk": "已切換至 {name}",
+    "manageConnections": "管理…",
+    "noProfiles": "尚無設定"
   },
   "provider": {
     "r2": "Cloudflare R2",
