@@ -198,8 +198,9 @@ function openPreview(row: ObjectItem) {
   previewKey.value = row.key
   previewError.value = t('browser.imageLoadFailed')
   previewLoading.value = true
-  // cache-bust so re-open after overwrite still refreshes
-  previewSrc.value = api.previewUrl(store.currentBucket, row.key) + '&t=' + Date.now()
+  // Version by ETag/LastModified so unchanged objects hit browser + server disk cache.
+  const ver = row.etag || row.lastModified || String(Date.now())
+  previewSrc.value = api.previewUrl(store.currentBucket, row.key) + '&v=' + encodeURIComponent(ver)
   showPreview.value = true
 }
 

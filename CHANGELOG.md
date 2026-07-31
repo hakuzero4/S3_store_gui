@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Local disk cache for object previews/downloads (temp dir, ETag/LastModified validated)
 - Sidebar connection source dropdown
 - Copy/Move across prefixes and buckets
 - ZIP download for selection

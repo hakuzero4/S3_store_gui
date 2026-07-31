@@ -132,6 +132,8 @@ export const api = {
     `/api/objects/download?bucket=${encodeURIComponent(bucket)}&key=${encodeURIComponent(key)}`,
   previewUrl: (bucket: string, key: string) =>
     `/api/objects/download?bucket=${encodeURIComponent(bucket)}&key=${encodeURIComponent(key)}&inline=1`,
+  cacheStats: () => http<{ enabled: boolean; dir?: string; files?: number; bytes?: number; maxFile?: number }>('/api/cache/stats'),
+  clearCache: () => http<{ ok: boolean }>('/api/cache', { method: 'DELETE' }),
 }
 
 export function isImageName(name: string): boolean {
