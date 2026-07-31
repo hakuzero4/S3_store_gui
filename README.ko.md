@@ -4,7 +4,7 @@
 
 **Cloudflare R2**, **AWS S3**, **MinIO** 지원. **단일 바이너리** 또는 **Docker** 배포.
 
-**언어:** [English](./README.md) · [????](./README.zh-CN.md) · [????](./README.zh-TW.md) · [???](./README.ja.md) · [???](./README.ko.md)
+**언어:** [English](./README.md) · [简体中文](./README.zh-CN.md) · [繁體中文](./README.zh-TW.md) · [日本語](./README.ja.md) · [한국어](./README.ko.md)
 
 ---
 

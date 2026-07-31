@@ -4,7 +4,7 @@
 
 支持 **Cloudflare R2**、**AWS S3**、**MinIO** 等。可打包为**单文件二进制**或 **Docker 镜像**。
 
-**语言：** [English](./README.md) · [????](./README.zh-CN.md) · [????](./README.zh-TW.md) · [???](./README.ja.md) · [???](./README.ko.md)
+**语言：** [English](./README.md) · [简体中文](./README.zh-CN.md) · [繁體中文](./README.zh-TW.md) · [日本語](./README.ja.md) · [한국어](./README.ko.md)
 
 ---
 
