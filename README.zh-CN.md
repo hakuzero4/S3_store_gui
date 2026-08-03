@@ -4,7 +4,7 @@
 
 管理 **Cloudflare R2**、**AWS S3**、**MinIO** 及其他 S3 API 端点；提供清爽的桌面风格 UI，可打包为 **单一二进制文件** 或 **Docker 镜像**。
 
-[![Go](https://img.shields.io/badge/Go-1.22+-00ADD8?logo=go&logoColor=white)](https://go.dev/)
+[![Go](https://img.shields.io/badge/Go-1.24+-00ADD8?logo=go&logoColor=white)](https://go.dev/)
 [![Vue](https://img.shields.io/badge/Vue-3-42b883?logo=vuedotjs&logoColor=white)](https://vuejs.org/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](./LICENSE)
 [![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white)](./Dockerfile)
@@ -145,7 +145,7 @@ CGO_ENABLED=0 go build -trimpath -ldflags "-s -w -X main.version=0.2.0" -o dist/
 
 ## 开发
 
-**依赖：** Go 1.22+、Node.js 20+
+**依赖：** Go 1.24+、Node.js 20+
 
 ```bash
 # API

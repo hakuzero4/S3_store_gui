@@ -4,7 +4,7 @@
 
 Manage **Cloudflare R2**, **AWS S3**, **MinIO**, and other S3 API endpoints from a clean desktop-style UI ? packaged as a **single binary** or a **Docker image**.
 
-[![Go](https://img.shields.io/badge/Go-1.22+-00ADD8?logo=go&logoColor=white)](https://go.dev/)
+[![Go](https://img.shields.io/badge/Go-1.24+-00ADD8?logo=go&logoColor=white)](https://go.dev/)
 [![Vue](https://img.shields.io/badge/Vue-3-42b883?logo=vuedotjs&logoColor=white)](https://vuejs.org/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](./LICENSE)
 [![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white)](./Dockerfile)
@@ -145,7 +145,7 @@ Example:
 
 ## Development
 
-**Requirements:** Go 1.22+, Node.js 20+
+**Requirements:** Go 1.24+, Node.js 20+
 
 ```bash
 # API server

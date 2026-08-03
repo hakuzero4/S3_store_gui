@@ -4,7 +4,7 @@
 
 **Cloudflare R2**、**AWS S3**、**MinIO** などを、クリーンなデスクトップ風 UI で管理。**単一バイナリ** または **Docker イメージ** で配布できます。
 
-[![Go](https://img.shields.io/badge/Go-1.22+-00ADD8?logo=go&logoColor=white)](https://go.dev/)
+[![Go](https://img.shields.io/badge/Go-1.24+-00ADD8?logo=go&logoColor=white)](https://go.dev/)
 [![Vue](https://img.shields.io/badge/Vue-3-42b883?logo=vuedotjs&logoColor=white)](https://vuejs.org/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](./LICENSE)
 [![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white)](./Dockerfile)
@@ -142,7 +142,7 @@ CGO_ENABLED=0 go build -trimpath -ldflags "-s -w -X main.version=0.2.0" -o dist/
 
 ## 開發
 
-**必要:** Go 1.22+、Node.js 20+
+**必要:** Go 1.24+、Node.js 20+
 
 ```bash
 go run ./cmd/s3store -addr 127.0.0.1:17890 -no-browser

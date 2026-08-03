@@ -182,19 +182,3 @@ export function providerKey(p?: string): string {
       return 'provider.other'
   }
 }
-
-/** @deprecated prefer providerKey + i18n */
-export function providerLabel(p?: string) {
-  switch (p) {
-    case 'r2':
-      return 'Cloudflare R2'
-    case 'aws':
-      return 'AWS S3'
-    case 'oss':
-      return 'Aliyun OSS'
-    case 'minio':
-      return 'MinIO'
-    default:
-      return 'S3 Compatible'
-  }
-}
